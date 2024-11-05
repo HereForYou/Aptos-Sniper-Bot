@@ -1,0 +1,24 @@
+{
+  "name": "ziptos-sniper-bot",
+  "version": "1.0.0",
+  "description": "This is sniper bot on Aptos Blockchain Network.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@martiandao/aptos-web3-bip44.js": "^2.0.2",
+    "@martiandao/aptos-web3.js": "^3.0.7",
+    "assert": "^2.1.0",
+    "cross-fetch": "^4.0.0",
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.1.7",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0"
+  }
+}
