@@ -1,14 +1,14 @@
-const { Telegraf, Markup, session } = require("telegraf");
-const { isValidWallet } = require("./utils/function");
-const { createWallet, createAccount, deriveAccount } = require("./utils/aptos-web3");
-const { createCipheriv } = require("crypto");
+const { Telegraf, session } = require("telegraf");
+const { isValidWallet, removeTags } = require("./utils/function");
+const { createAccount, deriveAccount } = require("./utils/aptos-web3");
+const { start, pause } = require("./utils/snipe");
 
-// Create new bot -> username: @aptos_snipe_bot
+//========================================================= Create new bot -> username: @aptos_snipe_bot
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
-const TEST_PRIVATE_KEY = process.env.TEST_PRIVATE_KEY;
-const wallets = [];
-const accounts = [];
+const wallets = []; //=========================== variable to save all wallets
+const accounts = []; //========================== variable to save all accounts
+let startMessage, chatId; //===================== variable to handle editing the initial message
 
 bot.use(session());
 bot.use((ctx, next) => {
@@ -18,24 +18,34 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// The description about bot
+//============================================================================= The description about bot
 const botDescription = "👋Hi, there! \n 👉This is Snipe Bot on Aptos Blockchain Network";
-
-// Handle the start command
-bot.command("start", async (ctx) => {
-  ctx.reply(botDescription, {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "Hey", callback_data: "hey" }],
-        [
-          { text: "Wallets", callback_data: "wallets" },
-          { text: "Create Wallet", callback_data: "create" },
-          { text: "Import Wallet", callback_data: "import" },
-          { text: "Delete Wallet", callback_data: "delete" },
-        ],
+const markUp = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: "Wallets", callback_data: "wallets" }],
+      [
+        { text: "Create Wallet", callback_data: "create" },
+        { text: "Import Wallet", callback_data: "import" },
+        { text: "Delete Wallet", callback_data: "delete" },
       ],
-    },
-  });
+      [
+        { text: "Start", callback_data: "start" },
+        { text: "Pause", callback_data: "pause" },
+      ],
+    ],
+  },
+};
+
+//=====================================================================================================|
+//                                 The part to declare the commands                                    |
+//=====================================================================================================|
+
+//============================================================================= Handle the start command
+bot.command("start", async (ctx) => {
+  chatId = ctx.chat.id;
+  console.log(chatId);
+  startMessage = await ctx.reply(botDescription, markUp);
 });
 
 // Handle the help command
@@ -48,7 +58,11 @@ bot.command((ctx) => {
   ctx.reply("⚠️ Sorry, I don't recognize that command.\nPlease use /help to see the available commands.");
 });
 
-// Handle the text message
+//=====================================================================================================|
+//                            The part to listen the messages from bot                                 |
+//=====================================================================================================|
+
+//============================================================================== Handle the text message
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
 
@@ -71,11 +85,11 @@ bot.on("text", async (ctx) => {
     wallets.push(account.address);
     console.log("wallets: ", wallets);
     ctx.reply(
-      "<b>address</b>: " +
+      "<b>address</b> : " +
         account.address +
-        "\n<b>privateKey</b>: " +
+        "\n<b>privateKey</b> : " +
         account.privateKey +
-        "\n<b>publicKey</b>: " +
+        "\n<b>publicKey</b> : " +
         account.publicKey,
       { parse_mode: "HTML" }
     );
@@ -95,26 +109,47 @@ bot.on("text", async (ctx) => {
   }
 });
 
-// Part to handle hey button event
-bot.action("hey", (ctx) => ctx.reply("Hey, there!"));
+//=====================================================================================================|
+//                             The part to declare the actions                                         |
+//=====================================================================================================|
 
-// Part to get all wallets
-bot.action("wallets", (ctx) => {
-  if (wallets.length === 0) {
-    ctx.reply("⚠️ There is no wallet");
-  } else {
-    ctx.reply(wallets.join("\n"));
-    ctx.session.previousCommand = "import";
+//============================================================================== Part to get all wallets
+bot.action("wallets", async (ctx) => {
+  let replyMessage = "";
+  try {
+    if (wallets.length === 0) {
+      replyMessage = "⚠️ There is no wallet";
+    } else {
+      replyMessage = "These are your wallets.\n<code>" + wallets.join("</code>\n<code>") + "</code>";
+    }
+
+    if (!startMessage) {
+      chatId = ctx.chat.id;
+      startMessage = await ctx.reply(replyMessage, { parse_mode: "HTML", reply_markup: markUp.reply_markup });
+      return;
+    }
+
+    if (removeTags(replyMessage) === removeTags(startMessage.text)) {
+      return;
+    }
+
+    startMessage = await ctx.telegram.editMessageText(chatId, startMessage.message_id, undefined, replyMessage, {
+      parse_mode: "HTML",
+      reply_markup: markUp.reply_markup,
+    });
+  } catch (error) {
+    console.log(error, startMessage);
+    ctx.reply("🚫 Sorry, something went wrong while sending message.\n Please restart the bot.");
   }
 });
 
-// Part to handle importing wallet
+//===================================================================== Part to handle importing wallet
 bot.action("import", (ctx) => {
-  ctx.reply("Okay. Please input the private key of your wallet.");
+  ctx.reply("Okay. Please input the private key of your wallet you want to import.");
   ctx.session.previousCommand = "import";
 });
 
-// Part to handle deleting wallet
+//===================================================================== Part to handle deleting wallet
 bot.action("delete", (ctx) => {
   if (wallets.length === 0) {
     ctx.reply("⚠️ There is no wallet!");
@@ -124,28 +159,58 @@ bot.action("delete", (ctx) => {
   ctx.session.previousCommand = "delete";
 });
 
-// Part to handle creating wallet
+//===================================================================== Part to handle creating wallet
 bot.action("create", async (ctx) => {
-  const account = await createAccount();
-  if (account.error) {
-    console.log(error);
-    ctx.reply("🚫 Something went wrong while creating account.");
-    return;
-  }
+  let replyMessage = "";
+  try {
+    const account = await createAccount(); // create new account
+    if (account.error) {
+      //===== if there is some errors
+      replyMessage = "🚫 Sorry, Something went wrong while creating account.";
+    } else {
+      accounts.push(account);
+      wallets.push(account.address);
+      replyMessage =
+        "Done! New wallet is created.\n" +
+        "<b>address</b> : <code>" +
+        account.address +
+        "</code>\n<b>privateKey</b> : <code>" +
+        account.privateKey +
+        "</code>\n<b>publicKey</b> : <code>" +
+        account.publicKey +
+        "</code>";
+    }
 
-  accounts.push(account);
-  wallets.push(account.address);
-  ctx.reply(
-    "<b>address</b>: " +
-      account.address +
-      "\n<b>privateKey</b>: " +
-      account.privateKey +
-      "\n<b>publicKey</b>: " +
-      account.publicKey,
-    { parse_mode: "HTML" }
-  );
+    if (!startMessage) {
+      chatId = ctx.chat.id;
+      startMessage = await ctx.reply(replyMessage, { parse_mode: "HTML", reply_markup: markUp.reply_markup });
+      return;
+    }
+
+    if (removeTags(replyMessage) === removeTags(startMessage.text)) {
+      return;
+    }
+
+    await ctx.telegram.editMessageText(chatId, startMessage.message_id, undefined, replyMessage, {
+      parse_mode: "HTML",
+      reply_markup: markUp.reply_markup,
+    });
+  } catch (error) {
+    console.log(error);
+    ctx.reply("🚫 Sorry, something went wrong while sending message.\nPlease restart the bot.");
+  }
 });
 
-// Start the bot
+bot.action("start", (ctx) => {
+  ctx.reply("Sniping is started...");
+  //   start(ctx);
+});
+
+bot.action("pause", (ctx) => {
+  ctx.reply("Sniping is paused.");
+  //   pause(ctx);
+});
+
+//===================================================================== Launch the bot
 bot.launch();
 console.log("Bot is running...");
