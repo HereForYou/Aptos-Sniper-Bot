@@ -9,13 +9,19 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/bludnic/opentrader)](https://github.com/bludnic/opentrader/graphs/contributors)
 [![Static Badge](https://img.shields.io/badge/Telegram-white?logo=Telegram)](https://t.me/+cJLNxLSjcW83Njgy)
 
-<p><b>Telegram Bot Username</b>: @aptos_snipe_bot</p>
+<p><b>Telegram Bot Username</b>: <a href="https://web.telegram.org/a/#7659999577">@aptos_snipe_bot</a></p>
 
 <h3>Description:</h3>
 The users can create, import and delete the wallets and add the tokens they want to trade.
 
 The bots buys the tokens as soon as the token you want to trade is added to liquidity pool.
 This bot uses the panora API and swap the tokens you target with APTOS token on Aptos Blockchain Network.
+
+<p align="center">
+  <a href="https://github.com/Ziptos-Inc/Sniper-Bot" title="Ziptos-Sniper-Bot">
+    <img src="images/initial.jpg" alt="ZiptosSniperBot initial" width="640" />
+  </a>
+</p>
 
 <h3>Commands:</h3>
 <b>/start</b>: Starting the bot</br>
