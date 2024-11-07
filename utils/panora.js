@@ -1,5 +1,8 @@
 const axios = require("axios");
 
+/**
+ * The function to get all tokens list from panora dex using panora API
+ */
 const getTokenList = async () => {
   const end_point = "https://api.panora.exchange/tokenlist";
 
@@ -24,6 +27,18 @@ const getTokenList = async () => {
   console.log("Token List: ", response.data.length);
 };
 
+/**
+ * This is the function to swap tokens
+ * 
+ * If there is liquidity pool with from and to token in DEX, it swaps the tokens, otherwise it returns error
+ *
+ * @param {string} fromToken The token address you want to use
+ * @param {string} toToken The token address that you want to get
+ * @param {string} fromAmount The amount you use for swap
+ * @param {string} toWallet The wallet address that you use to swap tokens
+ * @param {number?} slippage
+ * @returns If swapping is success, it returns the response otherwise error
+ */
 async function swapTokens(fromToken, toToken, fromAmount, toWallet, slippage = 0) {
   const end_point = "https://api.panora.exchange/swap";
   const params = {

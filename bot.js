@@ -36,19 +36,27 @@ bot.use((ctx, next) => {
 //                                 The part to declare the commands                                    |
 //=====================================================================================================|
 
-//============================================================================= Handle the start command
+/**
+ * When the user inputs /start command in bot
+ */
 bot.command("start", async (ctx) => {
   chatId = ctx.chat.id;
   console.log(chatId);
   currentMessage = await ctx.reply(mainText, mainMarkUp);
 });
 
-//============================================================================= Handle the help command
+/**
+ * When the user inputs /help command in bot
+ * 
+ * It returns all available commands to user
+ */
 bot.command("help", (ctx) => {
   ctx.reply(`You can control me by sending these commands:\n\n/start - start the bot\n`);
 });
 
-//============================================================================= Handle unrecognized commands
+/**
+ * When the user inputs unavailable commands in bot
+ */
 bot.command((ctx) => {
   ctx.reply("⚠️ Sorry, I don't recognize that command.\nPlease use /help to see the available commands.");
 });
@@ -57,12 +65,16 @@ bot.command((ctx) => {
 //                            The part to listen the messages from bot                                 |
 //=====================================================================================================|
 
-//============================================================================== Handle the text message
+/**
+ * Interact with the bot with the text message
+ * 
+ * Called when the user import and delete wallet and add new token
+ */
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
 
   //========================================================= The part to handle wallet will be imported
-  if (ctx.session.previousCommand === "import") {
+  if (ctx.session.prevState === "import") {
     // If the wallet is invalid
     if (!isValidWallet(text)) {
       ctx.reply("⚠️ Invalid private key! Please input the valid private key.");
@@ -90,9 +102,9 @@ bot.on("text", async (ctx) => {
         "</code>",
       { parse_mode: "HTML", reply_markup: markUp.reply_markup }
     );
-    ctx.session.previousCommand = "";
+    ctx.session.prevState = "";
     //======================================================= The part to handle deleting wallet
-  } else if (ctx.session.previousCommand === "delete") {
+  } else if (ctx.session.prevState === "delete") {
     const index = wallets.indexOf(text);
     if (index === -1) {
       ctx.reply("⚠️ There is no such wallet.\nPlease check again the wallet is existed.");
@@ -101,9 +113,9 @@ bot.on("text", async (ctx) => {
     wallets.splice(index, 1);
     chatId = ctx.chat.id;
     prevMessage = await ctx.reply("✅ Successfully deleted", markUp);
-    ctx.session.previousCommand = "";
+    ctx.session.prevState = "";
     //======================================================= The part to handle adding new token
-  } else if (ctx.session.previousCommand === "add") {
+  } else if (ctx.session.prevState === "add") {
     // If the the token address is invalid
     if (!isValidWallet(text)) {
       ctx.reply("⚠️ Invalid token address! Please input the valid token address.");
@@ -123,36 +135,12 @@ bot.on("text", async (ctx) => {
 //                             The part to declare the actions                                         |
 //=====================================================================================================|
 
-//============================================================================== When the user clicks the wallets button
+/**
+ * Catch the action when the user clicks the '💰 Wallets' call_back button
+ */
 bot.action("Wallets", async (ctx) => {
   await ctx.editMessageText("Select target chain:", walletsMarkUp);
   ctx.session.prevState = "Wallets";
-  // let replyMessage = "";
-  // try {
-  //   if (wallets.length === 0) {
-  //     replyMessage = "⚠️ There is no wallet";
-  //   } else {
-  //     replyMessage = "These are your wallets.\n<code>" + wallets.join("</code>\n<code>") + "</code>";
-  //   }
-
-  //   if (!prevMessage) {
-  //     chatId = ctx.chat.id;
-  //     prevMessage = await ctx.reply(replyMessage, { parse_mode: "HTML", reply_markup: markUp.reply_markup });
-  //     return;
-  //   }
-
-  //   if (removeTags(replyMessage) === removeTags(prevMessage.text)) {
-  //     return;
-  //   }
-
-  //   prevMessage = await ctx.telegram.editMessageText(chatId, prevMessage.message_id, undefined, replyMessage, {
-  //     parse_mode: "HTML",
-  //     reply_markup: markUp.reply_markup,
-  //   });
-  // } catch (error) {
-  //   console.log(error, prevMessage);
-  //   ctx.reply("🚫 Sorry, something went wrong while sending message.\n Please restart the bot.");
-  // }
 });
 
 /**
@@ -204,6 +192,8 @@ bot.action("GenerateWallet", async (ctx) => {
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe -> APTOS or ⚙️ Wallets -> APTOS ' call_back button
+ * 
+ * Navigate to other page according to the value of ctx.session.prevState
  */
 bot.action("APTOS", async (ctx) => {
   ctx.session.chain = "APTOS";
@@ -223,14 +213,15 @@ bot.action("APTOS", async (ctx) => {
   }
 });
 
-//===================================================================== When the user clicks the Config button
+/**
+ * Catch the action when the user clicks the '⚙️ Auto Snipe -> APTOS -> ⚙️ Config || ⚙️ Wallets -> APTOS -> ⚙️ Config ' call_back button
+ * 
+ * If there is no wallet, it returns this message '❌...'
+ */
 bot.action("Config", async (ctx) => {
   // if (tokens.length === 0 || wallets.length === 0) {
   if (wallets.length === 0) {
-    currentMessage = await ctx.reply(
-      "❌ You don't have a wallet. Generate or connect one to continue.",
-      manageWalletMarkUp("Return")
-    );
+    await ctx.reply("❌ You don't have a wallet. Generate or connect one to continue.", manageWalletMarkUp("Return"));
     return;
   }
   await ctx.editMessageText(mainText, mainMarkUp);
@@ -240,6 +231,7 @@ bot.action("Config", async (ctx) => {
 
 /**
  * Catch the action when the user clicks the Add Snipe call_back button
+ * 
  * If snipe is already started, it returns this text message '❌ Sorry, snipe is already started.'
  * If there is no wallet, it navigates to noWallet page
  * Otherwise it navigates to start and pause snipe page
@@ -277,13 +269,17 @@ bot.action("Return", async (ctx) => {
   });
 });
 
-//===================================================================== When the user clicks the import button
+/**
+ * Catch the action when the user click import call_back button
+ */
 bot.action("import", (ctx) => {
   ctx.reply("Okay. Please input the private key of your wallet you want to import.");
   ctx.session.previousCommand = "import";
 });
 
-//===================================================================== When the user clicks the delete button
+/**
+ * Catch the action when the user click delete call_back button
+ */
 bot.action("delete", (ctx) => {
   if (wallets.length === 0) {
     ctx.reply("⚠️ There is no wallet!");
@@ -293,7 +289,9 @@ bot.action("delete", (ctx) => {
   ctx.session.previousCommand = "delete";
 });
 
-//===================================================================== When the user clicks the create button
+/**
+ * Catch the action when the user click create call_back button
+ */
 bot.action("create", async (ctx) => {
   let replyMessage = "";
   try {
@@ -335,7 +333,9 @@ bot.action("create", async (ctx) => {
   }
 });
 
-//============================================================================== When the user clicks the your tokens button
+/**
+ * Catch the action when the user click tokens call_back button
+ */
 bot.action("tokens", async (ctx) => {
   let replyMessage = "";
   try {
@@ -365,12 +365,17 @@ bot.action("tokens", async (ctx) => {
   }
 });
 
-//===================================================================== When the user clicks the add token button
+/**
+ * Catch the action when the user click add call_back button
+ */
 bot.action("add", (ctx) => {
   ctx.reply("Okay. Please input the token address you want to add.");
   ctx.session.previousCommand = "add";
 });
 
+/**
+ * Catch the action when the user click start snipe call_back button
+ */
 bot.action("start", (ctx) => {
   if (isSnipeRunning) {
     ctx.reply("🚫 Sorry, snipe is already started.");
@@ -387,6 +392,9 @@ bot.action("start", (ctx) => {
   ctx.reply("Snipe is running...");
 });
 
+/**
+ * Catch the action when the user click pause snipe call_back button
+ */
 bot.action("pause", (ctx) => {
   if (!isSnipeRunning) {
     ctx.reply("Snipe does not get started.");
@@ -397,12 +405,14 @@ bot.action("pause", (ctx) => {
   ctx.reply("Snipe is paused.");
 });
 
-const commands = [
-  { command: "/start", description: "Start Aptos Snipe Bot" },
-  { command: "/help", description: "Show all available commands" },
-];
+// const commands = [
+//   { command: "/start", description: "Start Aptos Snipe Bot" },
+//   { command: "/help", description: "Show all available commands" },
+// ];
 // bot.telegram.setMyCommands(commands);
 
-//===================================================================== Launch the bot
+/**
+ * Launch the bot
+ */
 bot.launch();
 console.log("Bot is running...");
