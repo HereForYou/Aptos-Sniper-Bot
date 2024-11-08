@@ -8,17 +8,17 @@ const mainMarkUp = {
         { text: "⚙️ Call Channels", callback_data: "Channel" },
       ],
       [
-        { text: "⚙️ Presales", callback_data: "Presales" },
-        { text: "⚙️ Copytrade", callback_data: "CopyTrade" },
+        { text: "⚙️ Presales (soon)", callback_data: "Presales" },
+        { text: "⚙️ Copytrade (soon)", callback_data: "CopyTrade" },
       ],
       [
         { text: "🎯 Auto Snipe", callback_data: "AutoSnipe" },
-        { text: "📡 Signals", callback_data: "Signals" },
+        { text: "📡 Signals (soon)", callback_data: "Signals" },
       ],
       [
-        { text: "🌉 Bridge", callback_data: "Bridge" },
-        { text: "🌟 Premium", callback_data: "Premium" },
-        { text: "⁉️ FAQ", callback_data: "FAQ" },
+        { text: "🌉 Bridge (soon)", callback_data: "Bridge" },
+        { text: "🌟 Premium (soon)", callback_data: "Premium" },
+        { text: "⁉️ FAQ (soon)", callback_data: "FAQ" },
       ],
     ],
   },
@@ -31,7 +31,7 @@ const walletsMarkUp = {
       [{ text: "Return", callback_data: "Return" }],
       [
         { text: "APTOS", callback_data: "APTOS" },
-        { text: "MOVEMENT", callback_data: "MOVEMENT" },
+        { text: "MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
     ],
   },
@@ -62,7 +62,7 @@ const addSnipeMarkUp = {
   },
 };
 
-const manageWalletMarkUp = (returnCallback) => {
+const genConWalletMarkUp = (returnCallback) => {
   return {
     reply_markup: {
       inline_keyboard: [
@@ -77,6 +77,36 @@ const manageWalletMarkUp = (returnCallback) => {
   };
 };
 
+const manageWalletMarkUp = (flag) => {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
+        [
+          { text: "Connect Wallet", callback_data: "ConnectWallet" },
+          { text: "Disconnect Wallet", callback_data: "DisconnectWallet" },
+          { text: "Return", callback_data: "Wallets" },
+        ],
+        [
+          { text: "Generate Wallet", callback_data: "GenerateWallet" },
+          { text: "Multi-Wallet (soon)", callback_data: "MultiWallet" },
+          { text: "Active Wallet", callback_data: "ActiveWallet" },
+        ],
+        [
+          { text: "APTOS (soon)", callback_data: "APTOS" },
+          { text: "Tokens (soon)", callback_data: "Tokens" },
+        ],
+        [{ text: "Balance (soon)", callback_data: "Balance" }],
+        [
+          { text: "Buy KB (soon)", callback_data: "Buy KB" },
+          { text: "Config (soon)", callback_data: "Config" },
+          { text: !flag ? "Export" : "Hide", callback_data: "Export" },
+        ],
+      ],
+    },
+  };
+};
+
 const callChannelMarkUp = {
   reply_markup: {
     inline_keyboard: [
@@ -84,7 +114,7 @@ const callChannelMarkUp = {
       [{ text: "Return", callback_data: "Return" }],
       [
         { text: "APTOS", callback_data: "APTOS" },
-        { text: "MOVEMENT", callback_data: "MOVEMENT" },
+        { text: "MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
     ],
   },
@@ -95,7 +125,10 @@ const autoSnipeMarkUp = {
     inline_keyboard: [
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
       [{ text: "Return", callback_data: "Return" }],
-      [{ text: "APTOS", callback_data: "APTOS" }],
+      [
+        { text: "APTOS", callback_data: "APTOS" },
+        { text: "MOVEMENT (soon)", callback_data: "MOVEMENT" },
+      ],
     ],
   },
 };
@@ -106,15 +139,15 @@ const chainsMarkUp = {
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
       [
         { text: "🔴 APTOS", callback_data: "APTOS" },
-        { text: "🟢 MOVEMENT", callback_data: "MOVEMENT" },
+        { text: "🟢 MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
       [{ text: "🔻 Generate or connect a wallet 🔻", callback_data: "ControlWallet" }],
       [
         { text: "⚙️ APTOS", callback_data: "APTOS" },
-        { text: "⚙️ MOVEMENT", callback_data: "MOVEMENT" },
+        { text: "⚙️ MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
       [
-        { text: "🔄 Refresh", callback_data: "Refresh" },
+        { text: "🔄 Refresh (soon)", callback_data: "Refresh" },
         { text: "❌ Close", callback_data: "Close" },
       ],
     ],
@@ -155,6 +188,7 @@ module.exports = {
   callChannelMarkUp,
   autoSnipeMarkUp,
   manageSnipeMarkUp,
+  genConWalletMarkUp,
   manageWalletMarkUp,
   addSnipeMarkUp,
 };

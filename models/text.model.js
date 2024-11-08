@@ -9,12 +9,16 @@ The ⚙️ Setup section can be used to connect or generate a wallet for each ch
 
 const mainText = "👋Hi, there! \n 👉This is 🔫Ziptos Sniper Bot on Aptos Blockchain Network";
 
-const addSnipeText = `
+const addSnipeText = (text) => {
+  return `
 👍 Great! Ready to start snipe.
+
+${text}
 👉 Click start`;
+};
 
 /**
- * 
+ *
  * @param {string} address The newly generated wallet address
  * @param {string} privateKey The newly generated wallet Private Key
  * @param {string} publicKey The newly generated wallet Public Key

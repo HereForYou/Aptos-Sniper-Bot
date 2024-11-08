@@ -1,4 +1,4 @@
-const { swapTokens } = require("./panora");
+const { swapTokens } = require("./aptos-web3");
 let time;
 
 /**
@@ -10,18 +10,23 @@ let time;
  * @param {string} fromToken
  * @param {string} toToken
  * @param {string} fromAmount
- * @param {string} toWallet
+ * @param {object} account
  * @param {string} slippage Optional
  */
-const start = (ctx, fromToken, toToken, fromAmount, toWallet, slippage = 0) => {
+const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
   console.log("running...");
   time = setInterval(async () => {
-    const data = await swapTokens(fromToken, toToken, fromAmount, toWallet, slippage);
-    console.log(!!data.error, data);
+    const data = await swapTokens(fromToken, toToken, fromAmount, account, slippage);
     // if (data.error) {
-    // ctx.reply("There is no such liquidity pool between your token and other token.");
+    //   // ctx.reply("Sorry, something went wrong while swapping tokens!");
+    //   console.log("Sorry, something went wrong while swapping tokens!");
+    // } else {
+    //   clearInterval(time);
     // }
-  }, 5000);
+    if (!data.error) {
+      clearInterval(time);
+    }
+  }, 10000);
 };
 
 /**
