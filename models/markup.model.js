@@ -83,24 +83,24 @@ const manageWalletMarkUp = (flag) => {
       inline_keyboard: [
         [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
         [
-          { text: "Connect Wallet", callback_data: "ConnectWallet" },
-          { text: "Disconnect Wallet", callback_data: "DisconnectWallet" },
-          { text: "Return", callback_data: "Wallets" },
+          { text: "Import", callback_data: "ConnectWallet" },
+          { text: "Disconnect", callback_data: "DisconnectWallet" },
+          { text: !flag ? "Export" : "Hide", callback_data: "Export" },
         ],
         [
           { text: "Generate Wallet", callback_data: "GenerateWallet" },
-          { text: "Multi-Wallet (soon)", callback_data: "MultiWallet" },
-          { text: "Active Wallet", callback_data: "ActiveWallet" },
+          //   { text: "Multi-Wallet (soon)", callback_data: "MultiWallet" },
+          { text: "Activate", callback_data: "ActiveWallet" },
         ],
+        // [
+        //   { text: "APTOS (soon)", callback_data: "APTOS" },
+        //   { text: "Tokens (soon)", callback_data: "Tokens" },
+        // ],
+        // [{ text: "Balance (soon)", callback_data: "Balance" }],
         [
-          { text: "APTOS (soon)", callback_data: "APTOS" },
-          { text: "Tokens (soon)", callback_data: "Tokens" },
-        ],
-        [{ text: "Balance (soon)", callback_data: "Balance" }],
-        [
-          { text: "Buy KB (soon)", callback_data: "Buy KB" },
-          { text: "Config (soon)", callback_data: "Config" },
-          { text: !flag ? "Export" : "Hide", callback_data: "Export" },
+          //   { text: "Buy KB (soon)", callback_data: "Buy KB" },
+          //   { text: "⚙️ Config (soon)", callback_data: "Config" },
+          { text: "Return", callback_data: "Wallets" },
         ],
       ],
     },

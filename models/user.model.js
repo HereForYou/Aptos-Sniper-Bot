@@ -15,6 +15,7 @@ const UserSchema = new Schema({
       },
     },
   ],
+  tokens: [],
   snipes: [],
 });
 

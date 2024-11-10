@@ -7,22 +7,32 @@ const aptos = new Aptos(config);
 // const Moralis = require("moralis");
 // const MORALIS_API_KEY = process.env.MORALIS_API_KEY;
 
-// const getAptosBalance = async (address) => {
-//   try {
-//     await Moralis.default.start({
-//       apiKey: MORALIS_API_KEY,
-//     });
+const getAptosBalance = async (address) => {
+  try {
+    // await Moralis.default.start({
+    //   apiKey: MORALIS_API_KEY,
+    // });
+    // console.log(MORALIS_API_KEY);
 
-//     const response = await Moralis.default.AptosApi.wallets.getCoinBalancesByWallets({
-//       ownerAddresses: address,
-//       limit: 1,
-//     });
+    // const response = await Moralis.default.AptosApi.wallets.getCoinBalancesByWallets({
+    //   ownerAddresses: address,
+    //   limit: 1,
+    // });
 
-//     console.log(response.result);
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
+    // console.log(response.result);
+    const coinsData = await aptos.getAccountCoinsData({ accountAddress: address[0] });
+    const coins = coinsData.map((coin) => {
+      return {
+        symbol: coin.metadata.symbol,
+        name: coin.metadata.name,
+        amount: coin.amount,
+      };
+    });
+    return coins;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 /**
  * The function to create account
@@ -120,11 +130,12 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
 
   try {
     const response = await axios.post(end_point, "", { params, headers });
-    console.log("Response.data ==============", response.data, account.accountAddress);
+    console.log("Response.data ==============");
 
     const txParams = response.data.quotes[0].txData;
     console.log("=============== STEP 1 ===============");
 
+    const expireTimestamp = Math.floor(Date.now() / 1000) + 30;
     const transaction = await aptos.transaction.build.simple({
       sender: account.accountAddress,
       data: {
@@ -132,11 +143,12 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
         functionArguments: txParams.arguments,
         typeArguments: txParams.type_arguments,
       },
+      options: { expireTimestamp: expireTimestamp * 1000 },
     });
     console.log("=============== STEP 2 ===============");
 
-    const senderAuthenticator = aptos.transaction.sign({
-      signer: alice,
+    const senderAuthenticator = await aptos.transaction.sign({
+      signer: account,
       transaction,
     });
     console.log("=============== STEP 3 ===============");
@@ -144,7 +156,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
     const buyTx = await aptos.transaction.submit.simple({ transaction, senderAuthenticator });
     console.log("=============== STEP 4 ===============");
 
-    const result = await aptos.waitForTransaction(buyTx.hash);
+    const result = await aptos.waitForTransaction({ transactionHash: buyTx.hash });
     // const result = await client.waitForTransactionWithResult(buyTx.hash);
     console.log("=============== STEP 5 ===============");
 
@@ -157,15 +169,15 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
       return { error: `Buy transaction failed with status: ${result.vm_status}` };
     }
   } catch (error) {
-    console.log("Error while swapping.***********************", error);
-    return { error: "Error while swapping." };
+    console.error("Error while swapping.***********************", error);
+    return { error: error.data };
   }
 }
 
 module.exports = {
   createAccount,
   deriveAccount,
-  // getAptosBalance,
+  getAptosBalance,
   getTokenList,
   swapTokens,
 };

@@ -1,6 +1,6 @@
 /**
  * Returns a Boolean that indicates whether or not the wallet address is a stirng of 64 hex characters
- * 
+ *
  * @param {string} walletAddress Stirng of the wallet address you want to validate
  * @returns {boolean} Return true if the walletAddress is a string of 64 hex characters, otherwise return false
  */
@@ -20,7 +20,7 @@ function isValidWallet(walletAddress) {
 
 /**
  * Returns a String that removed all tags from input string
- * 
+ *
  * @param {string} input String you want to delete all tags from
  * @returns {string} String that removed all tags
  */
@@ -34,14 +34,27 @@ function removeTags(input) {
  * @param {Array} array The array you want to combine
  * @param {String} type The subject of each item in array
  * @param {Number} active The number of array that is active
+ * @param {Array} coins The number of array that is active
  * @returns Returns a string conbines the array with type subject, the active number of array is active
  */
-function combineTextArray(array, type, active = -1) {
+function combineTextArray(array, type, active = -1, coins = []) {
   let replyMessage = "";
   for (let i = 0; i < array.length; i++) {
     if (active === i || type === "Token Address") replyMessage += "🟢 ";
     else replyMessage += "🔴 ";
     replyMessage += "<b>" + type + "</b>: <code>" + array[i] + "</code>\n";
+
+    for (let j = 0; j < coins.length; j++) {
+      if (coins[j].amount !== 0)
+        replyMessage +=
+          "<b>Name</b>: " +
+          coins[j].name +
+          "\n<b>Symbol</b>: " +
+          coins[j].symbol +
+          "\n<b>Amount</b>: " +
+          coins[j].amount +
+          "\n\n";
+    }
   }
   return replyMessage;
 }
