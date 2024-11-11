@@ -17,10 +17,10 @@ const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
   console.log("running...");
   time = setInterval(async () => {
     const data = await swapTokens(fromToken, toToken, fromAmount, account, slippage);
-    if (data.error) {
+    if (data?.error) {
       // ctx.reply("Sorry, something went wrong while swapping tokens!");
       let replyMessage = "Sorry, something went wrong!";
-      if (data.error.error_code === "account_not_found") {
+      if (data?.error?.error_code === "account_not_found") {
         replyMessage =
           "Sorry, to use newly generated wallet, you must top up that one to let network verify your account.";
         clearInterval(time);

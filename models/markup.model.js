@@ -193,6 +193,33 @@ const markUp = {
   },
 };
 
+const buyTokenMarkUp = {
+  reply_markup: {
+    inline_keyboard: [
+      [
+        { text: "Ziptos", callback_data: "Ziptos" },
+        { text: "Sniper Bot", callback_data: "Ziptos" },
+      ],
+      [
+        { text: "Buy 0.1 APT", callback_data: "Buy0.1APT", },
+        { text: "Buy 0.2 APT", callback_data: "Buy0.2APT" },
+      ],
+      [
+        { text: "Buy 0.5 APT", callback_data: "Buy0.5APT" },
+        { text: "Buy 1 APT", callback_data: "Buy1APT" },
+      ],
+      [
+        { text: "Buy 2 APT", callback_data: "Buy2APT" },
+        { text: "Buy 5 APT", callback_data: "Buy5APT" },
+      ],
+      [
+        { text: "Buy X APT", callback_data: "BuyXAPT" },
+        { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
+      ],
+    ],
+  },
+};
+
 module.exports = {
   mainMarkUp,
   chainsMarkUp,
@@ -205,4 +232,5 @@ module.exports = {
   manageWalletMarkUp,
   addSnipeMarkUp,
   autoSnipeConfMarkUp,
+  buyTokenMarkUp,
 };

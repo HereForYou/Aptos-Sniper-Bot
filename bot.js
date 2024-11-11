@@ -1,6 +1,13 @@
 const { Telegraf, session } = require("telegraf");
 const { isValidWallet, removeTags, combineTextArray, isNumber, isInteger } = require("./utils/function");
-const { createAccount, deriveAccount, getAptosBalance } = require("./utils/aptos-web3");
+const {
+  createAccount,
+  deriveAccount,
+  getAptosBalance,
+  verifyToken,
+  getTokenInformation,
+  swapTokens,
+} = require("./utils/aptos-web3");
 const { start, pause } = require("./utils/snipe");
 const User = require("./models/user.model");
 const {
@@ -15,6 +22,7 @@ const {
   manageWalletMarkUp,
   addSnipeMarkUp,
   autoSnipeConfMarkUp,
+  buyTokenMarkUp,
 } = require("./models/markup.model");
 const { chainsText, mainText, generateWalletText, addSnipeText, autoSnipeConfigText } = require("./models/text.model");
 
@@ -52,8 +60,13 @@ bot.command("start", async (ctx) => {
     if (!user) {
       const newUser = new User({
         tgId: chatId,
+        userName: ctx.chat.username,
       });
       await newUser.save();
+    }
+    if (!user?.userName) {
+      user.userName = ctx.chat.username;
+      await user.save();
     }
     currentMessage = await ctx.reply(mainText, mainMarkUp);
   } catch (error) {
@@ -161,7 +174,7 @@ bot.on("text", async (ctx) => {
         return;
       }
 
-      user.accounts.push(account);
+      user.accounts.push({ ...account, active: user.accounts.length === 0 ? true : false });
       await user.save();
 
       await ctx.reply(
@@ -239,9 +252,37 @@ bot.on("text", async (ctx) => {
       }
       await user.save();
       await ctx.reply(replyMessage, mainMarkUp);
+      ctx.session.prevState = "";
     } else {
-      if (text.startsWith("/"))
+      if (text.startsWith("/")) {
         ctx.reply("⚠️ I don't recognize that command.\nPlease use /help to see available commands.");
+      } else {
+        if (user.accounts.length === 0) {
+          ctx.reply("You have no account. Please import or generate wallet!");
+          return;
+        }
+        if (user.accounts.filter((acc) => acc.active).length === 0) {
+          ctx.reply("You have no activated account. Please activate at least one wallet!");
+          return;
+        }
+        const data = await verifyToken(
+          text,
+          user.accounts.find((acc) => acc.active)
+        );
+        if (!data?.toToken) {
+          ctx.reply("Invalid token address. Re-try with valid token address!");
+          return;
+        }
+        const coinAddress = data.toToken.address.split("::")[0];
+        // const coinSymbol = data.toToken.address.split("::")[1];
+        const coinName = data.toToken.address.split("::")[2];
+        await ctx.reply(
+          `${coinName} 🔗 APT
+CA: <code>${coinAddress}</code>`,
+          { parse_mode: "HTML", reply_markup: buyTokenMarkUp.reply_markup }
+        );
+        ctx.session.toToken = text;
+      }
     }
   } catch (error) {
     console.error(error);
@@ -342,6 +383,7 @@ bot.action("GenerateWallet", async (ctx) => {
         accountAddress: account.accountAddress.toString(),
         privateKey: account.privateKey.toString(),
         publicKey: account.publicKey.toString(),
+        active: user.accounts.length === 0 ? true : false,
       });
       await user.save();
 
@@ -641,13 +683,12 @@ bot.action("Start", async (ctx) => {
       return;
     }
     const activeAccs = user.accounts.filter((account) => account.active === true);
-    console.log("activeAccsc", activeAccs);
     if (activeAccs.length === 0) {
       ctx.reply("🚫 Sorry, you have no active account. Activate at least one account.");
       return;
     }
 
-    start(ctx, "0x1::aptos_coin::AptosCoin", user.tokens[0], 0.1, await deriveAccount(activeAccs[0].privateKey));
+    start(ctx, "0x1::aptos_coin::AptosCoin", user.tokens[0], 0.1, activeAccs[0]);
     ctx.session.isSnipeRunning = true;
     ctx.reply("Snipe is running...");
   } catch (error) {
@@ -669,6 +710,35 @@ bot.action("Pause", (ctx) => {
     ctx.reply("Snipe is paused.");
   } catch (error) {
     console.log(error);
+  }
+});
+
+bot.action(/^Buy(0\.[1-9]|[1-10]|X)APT$/, async (ctx) => {
+  const chatId = ctx.chat.id;
+  const amount = ctx.callbackQuery.data.replace(/(Buy|APT)/g, "");
+  console.log(amount);
+  const toToken = ctx.session.toToken;
+  if (!toToken) {
+    await ctx.reply("Input the token address you wanna buy.");
+    return;
+  }
+  if (amount === "X") {
+    await ctx.reply("Input the amount of APT you wanna use to buy.");
+    ctx.session.prevState = "BuyToken";
+    return;
+  }
+  const user = await User.findOne({ tgId: chatId });
+  const activeAcc = await user.accounts.find((acc) => acc.active);
+  const data = await swapTokens("0x1::aptos_coin::AptosCoin", toToken, amount, activeAcc);
+  if (data?.error) {
+    let replyMessage = data?.error;
+    if (data?.error?.error_code === "account_not_found") {
+      replyMessage =
+        "Sorry, to use the newly generated wallet, you must top up that one to let network verify your account.";
+    }
+    ctx.reply(replyMessage);
+  } else {
+    ctx.reply(`$${data.toTokenAmount} ${toToken.split("::")[2]} Successfully buyed using $${amount} APT.`);
   }
 });
 

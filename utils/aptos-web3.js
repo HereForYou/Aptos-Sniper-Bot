@@ -7,7 +7,12 @@ const aptos = new Aptos(config);
 // const Moralis = require("moralis");
 // const MORALIS_API_KEY = process.env.MORALIS_API_KEY;
 
-const getAptosBalance = async (address) => {
+/**
+ *
+ * @param {Array} address
+ * @returns
+ */
+const getAptosBalance = async (addresses) => {
   try {
     // await Moralis.default.start({
     //   apiKey: MORALIS_API_KEY,
@@ -20,17 +25,20 @@ const getAptosBalance = async (address) => {
     // });
 
     // console.log(response.result);
-    const coinsData = await aptos.getAccountCoinsData({ accountAddress: address[0] });
-    const coins = coinsData.map((coin) => {
-      return {
-        symbol: coin.metadata.symbol,
-        name: coin.metadata.name,
-        amount: coin.amount,
-      };
-    });
-    return coins;
+    const coinsData = await Promise.all(
+      addresses.map(async (address) => {
+        const coinData = await aptos.getAccountCoinsData({ accountAddress: address });
+        return coinData.map((coin) => ({
+          symbol: coin.metadata.symbol,
+          name: coin.metadata.name,
+          decimals: coin.metadata.decimals,
+          amount: coin.amount,
+        }));
+      })
+    );
+    return coinsData;
   } catch (error) {
-    console.error(error);
+    console.error("Something went wrong while getting coins data of account.", error);
   }
 };
 
@@ -130,14 +138,15 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
 
   try {
     const response = await axios.post(end_point, "", { params, headers });
-    console.log("Response.data ==============");
+    console.log("Response.data ==============", response.data);
 
     const txParams = response.data.quotes[0].txData;
     console.log("=============== STEP 1 ===============");
+    derivedAccount = await deriveAccount(account.privateKey);
 
     const expireTimestamp = Math.floor(Date.now() / 1000) + 30;
     const transaction = await aptos.transaction.build.simple({
-      sender: account.accountAddress,
+      sender: derivedAccount.accountAddress,
       data: {
         function: txParams.function,
         functionArguments: txParams.arguments,
@@ -148,7 +157,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
     console.log("=============== STEP 2 ===============");
 
     const senderAuthenticator = await aptos.transaction.sign({
-      signer: account,
+      signer: derivedAccount,
       transaction,
     });
     console.log("=============== STEP 3 ===============");
@@ -157,12 +166,11 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
     console.log("=============== STEP 4 ===============");
 
     const result = await aptos.waitForTransaction({ transactionHash: buyTx.hash });
-    // const result = await client.waitForTransactionWithResult(buyTx.hash);
     console.log("=============== STEP 5 ===============");
 
     if (result.vm_status == "Executed successfully") {
       console.log("=============== STEP 6 ===============");
-      return result; // Return result if buy is successful
+      return { toTokenAmount: response.data.quotes[0].toTokenAmount }; // Return result if buy is successful
     } else {
       console.log("=============== STEP 7 ===============");
       console.error(`Buy transaction failed with status: ${result.vm_status}`);
@@ -170,9 +178,44 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
     }
   } catch (error) {
     console.error("Error while swapping.***********************", error);
+    return { error: error.data ?? "Sorry, something went wrong while swapping." };
+  }
+}
+
+async function verifyToken(tokenAddress, account) {
+  const end_point = "https://api.panora.exchange/swap";
+  const params = {
+    chainId: 1,
+    fromTokenAddress: "0x1::aptos_coin::AptosCoin",
+    toTokenAddress: tokenAddress,
+    fromTokenAmount: 1,
+    toWalletAddress: account.accountAddress.toString(),
+    slippagePercentage: 0,
+    integratorFeePercentage: 0,
+  };
+
+  const headers = {
+    Accept: "application/json",
+    "x-api-key": "a4^KV_EaTf4MW#ZdvgGKX#HUD^3IFEAOV_kzpIE^3BQGA8pDnrkT7JcIy#HNlLGi",
+  };
+
+  try {
+    const response = await axios.post(end_point, "", { params, headers });
+    return response.data;
+  } catch (error) {
+    console.error("Error while swapping.***********************", error);
     return { error: error.data };
   }
 }
+
+// async function getTokenInformation(tokenAddress) {
+//   try {
+//     const data = await aptos.getDigitalAssetData({ digitalAssetAddress: tokenAddress });
+//     console.log("token Information: ", data);
+//   } catch (error) {
+//     console.log("Error: getTokenInformation", error.data);
+//   }
+// }
 
 module.exports = {
   createAccount,
@@ -180,4 +223,6 @@ module.exports = {
   getAptosBalance,
   getTokenList,
   swapTokens,
+  verifyToken,
+  // getTokenInformation,
 };

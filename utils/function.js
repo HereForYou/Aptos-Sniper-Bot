@@ -37,22 +37,22 @@ function removeTags(input) {
  * @param {Array} coins The number of array that is active
  * @returns Returns a string conbines the array with type subject, the active number of array is active
  */
-function combineTextArray(array, type, active = -1, coins = []) {
+function combineTextArray(array, type, active = -1, coins = [[]]) {
   let replyMessage = "";
   for (let i = 0; i < array.length; i++) {
     if (active === i || type === "Token Address") replyMessage += "🟢 ";
     else replyMessage += "🔴 ";
     replyMessage += "<b>" + type + "</b>: <code>" + array[i] + "</code>\n";
 
-    for (let j = 0; j < coins.length; j++) {
-      if (coins[j].amount !== 0)
+    for (let j = 0; j < coins[i].length; j++) {
+      if (coins[i][j].amount !== 0)
         replyMessage +=
           "<b>Name</b>: " +
-          coins[j].name +
+          coins[i][j].name +
           "\n<b>Symbol</b>: " +
-          coins[j].symbol +
+          coins[i][j].symbol +
           "\n<b>Amount</b>: " +
-          coins[j].amount +
+          coins[i][j].amount / 10 ** coins[i][j].decimals +
           "\n\n";
     }
   }
