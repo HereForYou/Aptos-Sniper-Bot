@@ -24,6 +24,19 @@ const mainMarkUp = {
   },
 };
 
+const autoSnipeConfMarkUp = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
+      [
+        { text: "⚙️ Add Token", callback_data: "AddToken" },
+        { text: "⚙️ Remove Token", callback_data: "RemoveToken" },
+      ],
+      [{ text: "Return", callback_data: "APTOS" }],
+    ],
+  },
+};
+
 const walletsMarkUp = {
   reply_markup: {
     inline_keyboard: [
@@ -43,9 +56,9 @@ const manageSnipeMarkUp = {
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
       [
         { text: "⚙️ Config", callback_data: "Config" },
-        { text: "Return", callback_data: "AutoSnipe" },
+        { text: "Add Snipe", callback_data: "AddSnipe" },
       ],
-      [{ text: "Add Snipe", callback_data: "AddSnipe" }],
+      [{ text: "Return", callback_data: "AutoSnipe" }],
     ],
   },
 };
@@ -57,7 +70,7 @@ const addSnipeMarkUp = {
         { text: "Start", callback_data: "Start" },
         { text: "Pause", callback_data: "Pause" },
       ],
-      [{ text: "Return", callback_data: "Return" }],
+      [{ text: "Return", callback_data: "APTOS" }],
     ],
   },
 };
@@ -111,11 +124,11 @@ const callChannelMarkUp = {
   reply_markup: {
     inline_keyboard: [
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
-      [{ text: "Return", callback_data: "Return" }],
       [
         { text: "APTOS", callback_data: "APTOS" },
         { text: "MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
+      [{ text: "Return", callback_data: "Return" }],
     ],
   },
 };
@@ -124,11 +137,11 @@ const autoSnipeMarkUp = {
   reply_markup: {
     inline_keyboard: [
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
-      [{ text: "Return", callback_data: "Return" }],
       [
         { text: "APTOS", callback_data: "APTOS" },
         { text: "MOVEMENT (soon)", callback_data: "MOVEMENT" },
       ],
+      [{ text: "Return", callback_data: "Return" }],
     ],
   },
 };
@@ -174,7 +187,7 @@ const markUp = {
       ],
       [
         { text: "Start", callback_data: "start" },
-        { text: "Pause", callback_data: "pause" },
+        { text: "Pause", callback_data: "Pause" },
       ],
     ],
   },
@@ -191,4 +204,5 @@ module.exports = {
   genConWalletMarkUp,
   manageWalletMarkUp,
   addSnipeMarkUp,
+  autoSnipeConfMarkUp,
 };

@@ -7,10 +7,10 @@ let time;
  * Run swapTokens function in every 5000ms
  *
  * @param {Context<Update.CallbackQueryUpdate<CallbackQuery>> & Omit<Context<Update>} ctx
- * @param {string} fromToken
- * @param {string} toToken
- * @param {string} fromAmount
- * @param {object} account
+ * @param {string} fromToken The token you want to consume for toToken
+ * @param {string} toToken The token you want to get by consuming the fromToken
+ * @param {string} fromAmount The amount of fromToken
+ * @param {object} account The address of getting toToken and consuming fromToken
  * @param {string} slippage Optional
  */
 const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
@@ -23,6 +23,7 @@ const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
       if (data.error.error_code === "account_not_found") {
         replyMessage =
           "Sorry, to use newly generated wallet, you must top up that one to let network verify your account.";
+        clearInterval(time);
       }
       ctx.reply(replyMessage);
     } else {
@@ -30,9 +31,6 @@ const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
       console.log("Snipe is success", data);
       ctx.reply("Snipe is success! Successfully buyed the token.");
     }
-    // if (!data.error) {
-    //   clearInterval(time);
-    // }
   }, 10000);
 };
 

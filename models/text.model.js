@@ -37,4 +37,7 @@ const generateWalletText = (address, privateKey, publicKey) => {
     ⚠️ <i>Make sure to save this private key using pen and paper only. Do NOT copy-paste it anywhere. You could also import it to your Metamask/Trust Wallet. After you finish saving/importing the wallet credentials, delete this message. The bot will not display this information again.</i>`;
 };
 
-module.exports = { mainText, chainsText, addSnipeText, generateWalletText };
+const autoSnipeConfigText = `
+Add a token address you want to snipe.`
+
+module.exports = { mainText, chainsText, autoSnipeConfigText, addSnipeText, generateWalletText };

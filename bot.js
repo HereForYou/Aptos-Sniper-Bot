@@ -14,8 +14,9 @@ const {
   genConWalletMarkUp,
   manageWalletMarkUp,
   addSnipeMarkUp,
+  autoSnipeConfMarkUp,
 } = require("./models/markup.model");
-const { chainsText, mainText, generateWalletText, addSnipeText } = require("./models/text.model");
+const { chainsText, mainText, generateWalletText, addSnipeText, autoSnipeConfigText } = require("./models/text.model");
 
 //========================================================= Create new bot -> username: @aptos_snipe_bot
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -67,7 +68,42 @@ bot.command("start", async (ctx) => {
  */
 bot.command("help", (ctx) => {
   try {
-    ctx.reply(`You can control me by sending these commands:\n\n/start - start the bot\n`);
+    ctx.reply(
+      `You can control me by sending these commands:\n\n/start - start the bot\n\n/activate - activate you account\n`
+    );
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+/**
+ * When the user inputs unavailable commands in bot
+ */
+bot.command("activate", async (ctx) => {
+  try {
+    const chatId = ctx.chat.id;
+    let active = -1;
+    const user = await User.findOne({ tgId: chatId });
+    if (!user) {
+      ctx.reply("🚫 User not found!");
+      return;
+    }
+    if (user.accounts.length === 0) {
+      await ctx.editMessageText("ℹ️ Connect a wallet to show settings.", genConWalletMarkUp("Wallets"));
+      return;
+    }
+
+    // Map over accounts to get an array of account addresses
+    const accountAddresses = user.accounts.map((account, index) => {
+      if (account.active) active = index;
+      return account.accountAddress;
+    });
+    const coins = await getAptosBalance(accountAddresses);
+    let replyMessage = combineTextArray(accountAddresses, "Address", active, coins);
+    await ctx.reply(replyMessage, {
+      parse_mode: "HTML",
+      reply_markup: manageWalletMarkUp().reply_markup,
+    });
   } catch (error) {
     console.error(error);
   }
@@ -153,6 +189,10 @@ bot.on("text", async (ctx) => {
       ctx.session.prevState = "";
       //======================================================= The part to handle adding new token
     } else if (ctx.session.prevState === "AddToken") {
+      if (user.tokens.includes(text)) {
+        await ctx.reply("⚠️ That token is already added. Please input another token address.");
+        return;
+      }
       user.tokens.push(text);
       await user.save();
       const replyMessage = combineTextArray(user.tokens, "Token Address");
@@ -160,6 +200,21 @@ bot.on("text", async (ctx) => {
         parse_mode: "HTML",
         reply_markup: addSnipeMarkUp.reply_markup,
       });
+      ctx.session.prevState = "AutoSnipe";
+    } else if (ctx.session.prevState === "RemoveToken") {
+      if (!user.tokens.includes(text)) {
+        await ctx.reply("⚠️ That token does not exist. Please input token address existed in your token addresses.");
+        return;
+      }
+      const indexOf = user.tokens.indexOf(text);
+      user.tokens.splice(indexOf, 1);
+      await user.save();
+      const replyMessage = combineTextArray(user.tokens, "Token Address");
+      await ctx.reply("✅ Successfully removed\n\n" + replyMessage, {
+        parse_mode: "HTML",
+        reply_markup: addSnipeMarkUp.reply_markup,
+      });
+      ctx.session.prevState = "AutoSnipe";
     } else if (ctx.session.prevState === "ActiveWallet") {
       let replyMessage = "";
       if (!isInteger(text)) {
@@ -390,7 +445,7 @@ bot.action("APTOS", async (ctx) => {
   try {
     const chatId = ctx.chat.id;
     ctx.session.chain = "APTOS";
-    let active = 0;
+    let active = -1;
     const prevState = ctx.session.prevState;
     if (prevState === "AutoSnipe") {
       await ctx.editMessageText("Add, remove, and manage snipes!", manageSnipeMarkUp);
@@ -431,14 +486,20 @@ bot.action("Config", async (ctx) => {
   try {
     const chatId = ctx.chat.id;
     const user = await User.findOne({ tgId: chatId });
-    // if (tokens.length === 0 || wallets.length === 0) {
-    if (user.accounts.length === 0) {
-      await ctx.reply("❌ You don't have a wallet. Generate or connect one to continue.", genConWalletMarkUp("Return"));
-      return;
+    console.log(ctx.session.prevState);
+    if (ctx.session.prevState === "AutoSnipe") {
+      await ctx.editMessageText(autoSnipeConfigText, autoSnipeConfMarkUp);
+    } else {
+      // if (tokens.length === 0 || wallets.length === 0) {
+      if (user.accounts.length === 0) {
+        await ctx.reply(
+          "❌ You don't have a wallet. Generate or connect one to continue.",
+          genConWalletMarkUp("Return")
+        );
+        return;
+      }
+      await ctx.editMessageText(mainText, mainMarkUp);
     }
-    await ctx.editMessageText(mainText, mainMarkUp);
-
-    ctx.session.previousCommand = "AutoSnipe";
   } catch (error) {
     console.error(error);
   }
@@ -474,8 +535,30 @@ bot.action("AddSnipe", async (ctx) => {
       parse_mode: "HTML",
       reply_markup: addSnipeMarkUp.reply_markup,
     });
+  } catch (error) {
+    console.error(error);
+  }
+});
 
-    ctx.session.prevState = "AddSnipe";
+/**
+ * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Add Token' call_back button
+ */
+bot.action("AddToken", async (ctx) => {
+  try {
+    ctx.reply("Which token address you would like to snipe?");
+    ctx.session.prevState = "AddToken";
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+/**
+ * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Remove Token' call_back button
+ */
+bot.action("RemoveToken", async (ctx) => {
+  try {
+    ctx.reply("Which token address you would like to remove?");
+    ctx.session.prevState = "RemoveToken";
   } catch (error) {
     console.error(error);
   }
@@ -545,19 +628,26 @@ bot.action("add", (ctx) => {
  */
 bot.action("Start", async (ctx) => {
   try {
-    const chatId = ctx.chat.id;
-    const user = await User.findOne({ tgId: chatId });
-
     if (ctx.session.isSnipeRunning) {
       ctx.reply("🚫 Sorry, snipe is already started.");
       return;
     }
+
+    const chatId = ctx.chat.id;
+    const user = await User.findOne({ tgId: chatId });
+
     if (user.tokens.length === 0 || user.accounts.length === 0) {
       ctx.reply("🚫 Sorry, there is no token or wallet for swapping.");
       return;
     }
+    const activeAccs = user.accounts.filter((account) => account.active === true);
+    console.log("activeAccsc", activeAccs);
+    if (activeAccs.length === 0) {
+      ctx.reply("🚫 Sorry, you have no active account. Activate at least one account.");
+      return;
+    }
 
-    start(ctx, "0x1::aptos_coin::AptosCoin", user.tokens[0], 0.1, await deriveAccount(user.accounts[0].privateKey));
+    start(ctx, "0x1::aptos_coin::AptosCoin", user.tokens[0], 0.1, await deriveAccount(activeAccs[0].privateKey));
     ctx.session.isSnipeRunning = true;
     ctx.reply("Snipe is running...");
   } catch (error) {
@@ -582,11 +672,22 @@ bot.action("Pause", (ctx) => {
   }
 });
 
-// const commands = [
-//   { command: "/start", description: "Start Aptos Snipe Bot" },
-//   { command: "/help", description: "Show all available commands" },
-// ];
-// bot.telegram.setMyCommands(commands);
+// const setCommands = async () => {
+//   const commands = [
+//     { command: "/start", description: "Start Aptos Snipe Bot" },
+//     { command: "/activate", description: "Activate your account" },
+//     { command: "/help", description: "Show all available commands" },
+//   ];
+//   try {
+//     const result = await bot.telegram.setMyCommands(commands);
+//     if (result === false) {
+//       console.log("Return is false. Something went wrong while setting commands!");
+//     }
+//   } catch (error) {
+//     console.log("Something went wrong while setting commands!");
+//   }
+// };
+// setCommands();
 
 /**
  * Launch the bot
