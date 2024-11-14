@@ -4,7 +4,7 @@
   "description": "This is sniper bot on Aptos Blockchain Network.",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "dev": "nodemon index.js",
     "test": "test"
   },
   "author": "",

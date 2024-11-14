@@ -4,8 +4,6 @@ const axios = require("axios");
 
 const config = new AptosConfig({ network: Network.MAINNET });
 const aptos = new Aptos(config);
-// const Moralis = require("moralis");
-// const MORALIS_API_KEY = process.env.MORALIS_API_KEY;
 
 /**
  *
@@ -14,26 +12,29 @@ const aptos = new Aptos(config);
  */
 const getAptosBalance = async (addresses) => {
   try {
-    // await Moralis.default.start({
-    //   apiKey: MORALIS_API_KEY,
-    // });
-    // console.log(MORALIS_API_KEY);
-
-    // const response = await Moralis.default.AptosApi.wallets.getCoinBalancesByWallets({
-    //   ownerAddresses: address,
-    //   limit: 1,
-    // });
-
-    // console.log(response.result);
     const coinsData = await Promise.all(
       addresses.map(async (address) => {
         const coinData = await aptos.getAccountCoinsData({ accountAddress: address });
-        return coinData.map((coin) => ({
-          symbol: coin.metadata.symbol,
-          name: coin.metadata.name,
-          decimals: coin.metadata.decimals,
-          amount: coin.amount,
-        }));
+        console.log(coinData);
+        const coins = [];
+        const temp = { amount: 100000000 * 10 ** 8 };
+        for (let i = 0; i < coinData.length; i++) {
+          if (coinData[i].metadata.symbol === "APT" && temp.amount > coinData[i].amount) {
+            temp.symbol = coinData[i].metadata.symbol;
+            temp.name = coinData[i].metadata.name;
+            temp.decimals = coinData[i].metadata.decimals;
+            temp.amount = coinData[i].amount;
+          } else if (coinData[i].metadata.symbol !== "APT") {
+            coins.push({
+              symbol: coinData[i].metadata.symbol,
+              name: coinData[i].metadata.name,
+              decimals: coinData[i].metadata.decimals,
+              amount: coinData[i].amount,
+            });
+          }
+        }
+        if (temp.symbol) coins.push(temp);
+        return coins;
       })
     );
     return coinsData;
@@ -119,7 +120,7 @@ const getTokenList = async () => {
  * @param {number?} slippage
  * @returns If swapping is success, it returns the response otherwise error
  */
-async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0) {
+async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10) {
   const end_point = "https://api.panora.exchange/swap";
   const params = {
     chainId: 1,
@@ -169,8 +170,17 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
     console.log("=============== STEP 5 ===============");
 
     if (result.vm_status == "Executed successfully") {
-      console.log("=============== STEP 6 ===============");
-      return { toTokenAmount: response.data.quotes[0].toTokenAmount }; // Return result if buy is successful
+      console.log("=============== STEP 6 ===============", result);
+      return {
+        fromTokenPrice: response.data.fromToken.current_price,
+        fromTokenAmount: response.data.fromTokenAmount,
+        fromTokenAmountUSD: response.data.fromTokenAmountUSD,
+        toTokenPrice: response.data.toToken.current_price,
+        toTokenAmount: response.data.quotes[0].toTokenAmount,
+        toTokenAmountUSD: response.data.quotes[0].toTokenAmountUSD,
+        slippagePercentage: response.data.quotes[0].slippagePercentage,
+        priceImpact: response.data.quotes[0].priceImpact,
+      }; // Return result if buy is successful
     } else {
       console.log("=============== STEP 7 ===============");
       console.error(`Buy transaction failed with status: ${result.vm_status}`);
@@ -182,6 +192,13 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 0)
   }
 }
 
+/**
+ * Returns Boolean to indicates that token is added to liquidity with APT
+ *
+ * @param {String} tokenAddress the token address you want to verify
+ * @param {Object} account the account you want to use to verify
+ * @returns If the token is added to liquidty with APT returns true, otherwise false
+ */
 async function verifyToken(tokenAddress, account) {
   const end_point = "https://api.panora.exchange/swap";
   const params = {
@@ -208,15 +225,6 @@ async function verifyToken(tokenAddress, account) {
   }
 }
 
-// async function getTokenInformation(tokenAddress) {
-//   try {
-//     const data = await aptos.getDigitalAssetData({ digitalAssetAddress: tokenAddress });
-//     console.log("token Information: ", data);
-//   } catch (error) {
-//     console.log("Error: getTokenInformation", error.data);
-//   }
-// }
-
 module.exports = {
   createAccount,
   deriveAccount,
@@ -224,5 +232,4 @@ module.exports = {
   getTokenList,
   swapTokens,
   verifyToken,
-  // getTokenInformation,
 };

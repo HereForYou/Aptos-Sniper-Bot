@@ -1,3 +1,6 @@
+const User = require("../models/user.model");
+const { roundUpToSpecificDecimalPlaces } = require("../utils/function");
+
 /**
  * The text that displayed on the page when occurs the Chains action
  */
@@ -7,7 +10,9 @@ const chainsText = `⚠️ At least one chain needs to be enabled and setup with
 
 The ⚙️ Setup section can be used to connect or generate a wallet for each chain with a missing wallet.`;
 
-const mainText = "👋Hi, there! \n 👉This is 🔫Ziptos Sniper Bot on Aptos Blockchain Network";
+const mainText = () => {
+  return "👋 Hi, there! \n 👉 This is 🔫Ziptos Sniper Bot on Aptos Blockchain Network";
+};
 
 const addSnipeText = (text) => {
   return `
@@ -38,6 +43,38 @@ const generateWalletText = (address, privateKey, publicKey) => {
 };
 
 const autoSnipeConfigText = `
-Add a token address you want to snipe.`
+Add a token address you want to snipe.`;
 
-module.exports = { mainText, chainsText, autoSnipeConfigText, addSnipeText, generateWalletText };
+/**
+ *
+ * @param {Object} param0
+ * @returns Return the reply text when buying token succeeds
+ */
+const buySuccessReplyText = ({
+  symbol,
+  price,
+  pl,
+  timeElapsed,
+  priceImpact,
+  mainTokenSymbol = "APT",
+  initial,
+  worth,
+}) => {
+  return `<b>📌 Primary Trade</b>
+💳 Main
+🌎 $${symbol} 🚀 ${roundUpToSpecificDecimalPlaces(pl, 2)}% ⏱ what?
+💶 Initial: <b>${initial} ${mainTokenSymbol}</b>
+💷 Worth: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>
+⏳ Time elapsed: <b>${timeElapsed}</b>
+
+💵 Price: <b>$${price}</b>
+📉 CA Balance | 0% what?
+⚖ Taxes: 🅑 0% 🅢 0% what?
+
+📈 P/L: <b>${roundUpToSpecificDecimalPlaces(pl, 2)}</b>%
+💸 Price Impact: <b>${priceImpact}</b>%
+🤑 Expected Payout: <b>${roundUpToSpecificDecimalPlaces(initial - worth, 5)} ${mainTokenSymbol}</b>
+`;
+};
+
+module.exports = { mainText, chainsText, autoSnipeConfigText, addSnipeText, generateWalletText, buySuccessReplyText };

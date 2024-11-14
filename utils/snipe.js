@@ -1,9 +1,8 @@
 const { swapTokens } = require("./aptos-web3");
-let time;
+let time = {};
 
 /**
  * The function to start the snipe
- *
  * Run swapTokens function in every 5000ms
  *
  * @param {Context<Update.CallbackQueryUpdate<CallbackQuery>> & Omit<Context<Update>} ctx
@@ -15,7 +14,7 @@ let time;
  */
 const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
   console.log("running...");
-  time = setInterval(async () => {
+  time[ctx.chat.id] = setInterval(async () => {
     const data = await swapTokens(fromToken, toToken, fromAmount, account, slippage);
     if (data?.error) {
       // ctx.reply("Sorry, something went wrong while swapping tokens!");
@@ -38,7 +37,8 @@ const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
  * Pause snipe, clear the time interval
  */
 const pause = () => {
-  clearInterval(time);
+  clearInterval(time[ctx.chat.id]);
+  delete time[ctx.chat.id];
 };
 
 module.exports = {

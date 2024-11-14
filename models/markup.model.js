@@ -1,5 +1,6 @@
 const mainMarkUp = {
   reply_markup: {
+    parse_mode: "HTML",
     inline_keyboard: [
       [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
       [{ text: "🌐 Chains", callback_data: "Chains" }],
@@ -64,6 +65,7 @@ const manageSnipeMarkUp = {
 };
 
 const addSnipeMarkUp = {
+  parse_mode: "HTML",
   reply_markup: {
     inline_keyboard: [
       [
@@ -92,6 +94,7 @@ const genConWalletMarkUp = (returnCallback) => {
 
 const manageWalletMarkUp = (flag) => {
   return {
+    parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
         [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
@@ -103,7 +106,8 @@ const manageWalletMarkUp = (flag) => {
         [
           { text: "Generate Wallet", callback_data: "GenerateWallet" },
           //   { text: "Multi-Wallet (soon)", callback_data: "MultiWallet" },
-          { text: "Activate", callback_data: "ActiveWallet" },
+          { text: "Activate", callback_data: "ActivateWallet" },
+          { text: "Deactivate", callback_data: "DeactivateWallet" },
         ],
         // [
         //   { text: "APTOS (soon)", callback_data: "APTOS" },
@@ -114,6 +118,22 @@ const manageWalletMarkUp = (flag) => {
           //   { text: "Buy KB (soon)", callback_data: "Buy KB" },
           //   { text: "⚙️ Config (soon)", callback_data: "Config" },
           { text: "Return", callback_data: "Wallets" },
+        ],
+      ],
+    },
+  };
+};
+
+const selectWalletForBuy = (accounts) => {
+  return {
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Ziptos Sniper Bot", callback_data: "Ziptos" }],
+        [
+          ...accounts.map((account, index) => {
+            return { text: `Wallet${index + 1}`, callback_data: `Wallet ${index}` };
+          }),
         ],
       ],
     },
@@ -167,33 +187,8 @@ const chainsMarkUp = {
   },
 };
 
-const markUp = {
-  reply_markup: {
-    inline_keyboard: [
-      [{ text: "Ziptos Sniper Bot", callback_data: "ziptos" }],
-      [{ text: "⚙️ Chains", callback_data: "chains" }],
-      [
-        { text: "⚙️ Wallets", callback_data: "wallets" },
-        { text: "⚙️ Call Channels", callback_data: "Channel" },
-      ],
-      [
-        { text: "Create Wallet", callback_data: "create" },
-        { text: "Import Wallet", callback_data: "import" },
-        { text: "Delete Wallet", callback_data: "delete" },
-      ],
-      [
-        { text: "Add Token", callback_data: "add" },
-        { text: "Your Tokens", callback_data: "tokens" },
-      ],
-      [
-        { text: "Start", callback_data: "start" },
-        { text: "Pause", callback_data: "Pause" },
-      ],
-    ],
-  },
-};
-
-const buyTokenMarkUp = {
+const buySuccessReplyMarkUp = {//🔁
+  parse_mode: "HTML",
   reply_markup: {
     inline_keyboard: [
       [
@@ -201,7 +196,41 @@ const buyTokenMarkUp = {
         { text: "Sniper Bot", callback_data: "Ziptos" },
       ],
       [
-        { text: "Buy 0.1 APT", callback_data: "Buy0.1APT", },
+        { text: "25%", callback_data: "25%" },
+        { text: "50%", callback_data: "50%" },
+        { text: "75%", callback_data: "75%" },
+        { text: "100%", callback_data: "100%" },
+      ],
+      [
+        { text: "Sell Initials", callback_data: "Sell Initials" },
+        { text: "Sell", callback_data: "Sell" },
+        { text: "Sell X %", callback_data: "Sell X %" },
+      ],
+      [
+        { text: "Sell X APT", callback_data: "Sell X APT" },
+        { text: "Sell Max TX", callback_data: "Sell Max Tx" },
+        { text: "Sell X Tokens", callback_data: "Sell X Tokens" },
+      ],
+      [
+        { text: "🔄 Reset", callback_data: "Reset" },
+        { text: "🟢 Refresh", callback_data: "Refresh" },
+        { text: "🔴 Stop", callback_data: "Stop" },
+        { text: "❌ Delete", callback_data: "Delete" },
+      ],
+    ],
+  },
+};
+
+const buyTokenMarkUp = {
+  parse_mode: "HTML",
+  reply_markup: {
+    inline_keyboard: [
+      [
+        { text: "Ziptos", callback_data: "Ziptos" },
+        { text: "Sniper Bot", callback_data: "Ziptos" },
+      ],
+      [
+        { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
         { text: "Buy 0.2 APT", callback_data: "Buy0.2APT" },
       ],
       [
@@ -212,10 +241,10 @@ const buyTokenMarkUp = {
         { text: "Buy 2 APT", callback_data: "Buy2APT" },
         { text: "Buy 5 APT", callback_data: "Buy5APT" },
       ],
-      [
-        { text: "Buy X APT", callback_data: "BuyXAPT" },
-        { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
-      ],
+      // [
+      //   { text: "Buy X APT", callback_data: "BuyXAPT" },
+      //   { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
+      // ],
     ],
   },
 };
@@ -223,14 +252,15 @@ const buyTokenMarkUp = {
 module.exports = {
   mainMarkUp,
   chainsMarkUp,
-  markUp,
   walletsMarkUp,
   callChannelMarkUp,
   autoSnipeMarkUp,
   manageSnipeMarkUp,
   genConWalletMarkUp,
   manageWalletMarkUp,
+  selectWalletForBuy,
   addSnipeMarkUp,
   autoSnipeConfMarkUp,
+  buySuccessReplyMarkUp,
   buyTokenMarkUp,
 };

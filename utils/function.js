@@ -33,27 +33,42 @@ function removeTags(input) {
  *
  * @param {Array} array The array you want to combine
  * @param {String} type The subject of each item in array
- * @param {Number} active The number of array that is active
+ * @param {Array} active The number of array that is active
  * @param {Array} coins The number of array that is active
  * @returns Returns a string conbines the array with type subject, the active number of array is active
  */
-function combineTextArray(array, type, active = -1, coins = [[]]) {
+function combineTextArray(array, type, active = [], coins = null, account = false) {
   let replyMessage = "";
   for (let i = 0; i < array.length; i++) {
-    if (active === i || type === "Token Address") replyMessage += "🟢 ";
-    else replyMessage += "🔴 ";
-    replyMessage += "<b>" + type + "</b>: <code>" + array[i] + "</code>\n";
+    if (!account) {
+      if (active.includes(i) || type === "Token Address") replyMessage += "🟢 ";
+      else replyMessage += "🔴 ";
+      replyMessage += "<b>" + type + (i + 1) + "</b>: <code>" + array[i] + "</code>\n";
 
-    for (let j = 0; j < coins[i].length; j++) {
-      if (coins[i][j].amount !== 0)
-        replyMessage +=
-          "<b>Name</b>: " +
-          coins[i][j].name +
-          "\n<b>Symbol</b>: " +
-          coins[i][j].symbol +
-          "\n<b>Amount</b>: " +
-          coins[i][j].amount / 10 ** coins[i][j].decimals +
-          "\n\n";
+      if (coins !== null) {
+        for (let j = 0; j < coins[i].length; j++) {
+          if (coins[i][j].amount !== 0)
+            replyMessage +=
+              "<b>Name</b>: " +
+              coins[i][j].name +
+              "\n<b>Symbol</b>: " +
+              coins[i][j].symbol +
+              "\n<b>Amount</b>: " +
+              coins[i][j].amount / 10 ** coins[i][j].decimals +
+              "\n\n";
+        }
+      }
+    } else {
+      replyMessage +=
+        "\n<b>Address</b>: <code>" +
+        array[i].accountAddress +
+        "</code>\n" +
+        "<b>Private Key</b>: <code>" +
+        array[i].privateKey +
+        "</code>\n" +
+        "<b>Public Key</b>: <code>" +
+        array[i].publicKey +
+        "</code>\n";
     }
   }
   return replyMessage;
@@ -80,4 +95,15 @@ function isInteger(value) {
   return Number.isInteger(num) && value.trim() !== "";
 }
 
-module.exports = { isValidWallet, removeTags, combineTextArray, isNumber, isInteger };
+/**
+ *
+ * @param {Number} num
+ * @param {Number} decimal
+ * @returns
+ */
+function roundUpToSpecificDecimalPlaces(num, decimal = 0) {
+  const decimals = 10 ** decimal;
+  return Math.floor(num * decimals) / decimals;
+}
+
+module.exports = { isValidWallet, removeTags, combineTextArray, isNumber, isInteger, roundUpToSpecificDecimalPlaces };

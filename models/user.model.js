@@ -19,8 +19,30 @@ const UserSchema = new Schema({
       },
     },
   ],
-  tokens: [],
+  tokens: [
+    {
+      address: String,
+      // symbol: String,
+      totalUsedAptosAmount: Number,
+      totalUsedAptosAmountUSD: Number,
+      totalBoughtTokenAmount: Number,
+      totalBoughtTokenAmountUSD: Number,
+      // totalBuyedTokenPrice: Number,
+      initialBuyDate: {
+        type: Date,
+        default: () => Date.now(),
+      },
+      latestBuyDate: {
+        type: Date,
+        default: () => Date.now(),
+      },
+    },
+  ],
   snipes: [],
+  premium: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const User = model("User", UserSchema, "user");
