@@ -124,7 +124,17 @@ const manageWalletMarkUp = (flag) => {
   };
 };
 
-const selectWalletForBuy = (accounts) => {
+/**
+ *
+ * @param {Array} accounts
+ * @returns
+ */
+const selectWalletForBuyMarkUp = (accounts) => {
+  let markUps = [];
+  for (let i = 0; i < Math.ceil(accounts.length / 3); i++) {
+    markUps.push([]);
+  }
+  console.log(markUps);
   return {
     parse_mode: "HTML",
     reply_markup: {
@@ -135,6 +145,13 @@ const selectWalletForBuy = (accounts) => {
             return { text: `Wallet${index + 1}`, callback_data: `Wallet ${index}` };
           }),
         ],
+        // accounts.map((element, index) => {
+        //   markUps[index / 3].push({ text: `Wallet${index + 1}`, callback_data: `Wallet ${index}` });
+        //   if (index === accounts.length) {
+        //     return ...markUps;
+        //   }
+        // }),
+        [{ text: "Wallet All", callback_data: "Wallet All" }],
       ],
     },
   };
@@ -187,7 +204,8 @@ const chainsMarkUp = {
   },
 };
 
-const buySuccessReplyMarkUp = {//🔁
+const buySuccessReplyMarkUp = {
+  //🔁
   parse_mode: "HTML",
   reply_markup: {
     inline_keyboard: [
@@ -258,7 +276,7 @@ module.exports = {
   manageSnipeMarkUp,
   genConWalletMarkUp,
   manageWalletMarkUp,
-  selectWalletForBuy,
+  selectWalletForBuyMarkUp,
   addSnipeMarkUp,
   autoSnipeConfMarkUp,
   buySuccessReplyMarkUp,

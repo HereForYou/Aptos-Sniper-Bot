@@ -60,14 +60,14 @@ function combineTextArray(array, type, active = [], coins = null, account = fals
       }
     } else {
       replyMessage +=
-        "\n<b>Address</b>: <code>" +
-        array[i].accountAddress +
-        "</code>\n" +
-        "<b>Private Key</b>: <code>" +
+        // "\n<b>Address</b>: <code>" +
+        // array[i].accountAddress +
+        // "</code>\n" +
+        "\n<b>Private Key</b>: <code>" +
         array[i].privateKey +
         "</code>\n" +
         "<b>Public Key</b>: <code>" +
-        array[i].publicKey +
+        array[i].accountAddress +
         "</code>\n";
     }
   }
@@ -106,4 +106,29 @@ function roundUpToSpecificDecimalPlaces(num, decimal = 0) {
   return Math.floor(num * decimals) / decimals;
 }
 
-module.exports = { isValidWallet, removeTags, combineTextArray, isNumber, isInteger, roundUpToSpecificDecimalPlaces };
+function convertMilliseconds(ms) {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30); // Using 30 days as an average month
+
+  const remainingDays = days % 30;
+  const remainingHours = hours % 24;
+  const remainingMinutes = minutes % 60;
+  const remainingSeconds = seconds % 60;
+
+  return `${remainingDays ? remainingDays + "d " : ""}${remainingHours ? remainingHours + "h " : ""}${
+    remainingMinutes ? remainingMinutes + "m " : ""
+  }${remainingSeconds}s`;
+}
+
+module.exports = {
+  isValidWallet,
+  removeTags,
+  combineTextArray,
+  isNumber,
+  isInteger,
+  roundUpToSpecificDecimalPlaces,
+  convertMilliseconds,
+};

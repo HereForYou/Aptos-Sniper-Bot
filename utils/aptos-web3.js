@@ -153,9 +153,9 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
         functionArguments: txParams.arguments,
         typeArguments: txParams.type_arguments,
       },
-      options: { expireTimestamp: expireTimestamp * 1000 },
+      options: { expireTimestamp: expireTimestamp * 1000, maxGasAmount: 1000 },
     });
-    console.log("=============== STEP 2 ===============");
+    console.log("=============== STEP 2 ===============", transaction);
 
     const senderAuthenticator = await aptos.transaction.sign({
       signer: derivedAccount,
@@ -170,7 +170,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
     console.log("=============== STEP 5 ===============");
 
     if (result.vm_status == "Executed successfully") {
-      console.log("=============== STEP 6 ===============", result);
+      console.log("=============== STEP 6 ===============");
       return {
         fromTokenPrice: response.data.fromToken.current_price,
         fromTokenAmount: response.data.fromTokenAmount,
@@ -180,6 +180,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
         toTokenAmountUSD: response.data.quotes[0].toTokenAmountUSD,
         slippagePercentage: response.data.quotes[0].slippagePercentage,
         priceImpact: response.data.quotes[0].priceImpact,
+        accountAddress: account.accountAddress.toString(),
       }; // Return result if buy is successful
     } else {
       console.log("=============== STEP 7 ===============");

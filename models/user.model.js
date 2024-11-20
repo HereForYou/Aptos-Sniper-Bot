@@ -27,12 +27,19 @@ const UserSchema = new Schema({
       totalUsedAptosAmountUSD: Number,
       totalBoughtTokenAmount: Number,
       totalBoughtTokenAmountUSD: Number,
+      accountAddress: String,
       // totalBuyedTokenPrice: Number,
       initialBuyDate: {
         type: Date,
-        default: () => Date.now(),
       },
       latestBuyDate: {
+        type: Date,
+        default: () => Date.now(),
+      },
+      initialSellDate: {
+        type: Date,
+      },
+      latestSellDate: {
         type: Date,
         default: () => Date.now(),
       },

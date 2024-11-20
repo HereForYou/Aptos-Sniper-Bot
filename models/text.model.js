@@ -30,14 +30,14 @@ ${text}
  * @returns Returns the text displayed on the page
  */
 const generateWalletText = (address, privateKey, publicKey) => {
+  //Address: <code>${address}</code>
   return `
     ✅ Generated new wallet:
 
     Chain: <b>APTOS</b>
 
-    Address: <code>${address}</code>
+    Public Key: <code>${address}</code>
     Private Key: <code>${privateKey}</code>
-    Public Key: <code>${publicKey}</code>
     
     ⚠️ <i>Make sure to save this private key using pen and paper only. Do NOT copy-paste it anywhere. You could also import it to your Metamask/Trust Wallet. After you finish saving/importing the wallet credentials, delete this message. The bot will not display this information again.</i>`;
 };
@@ -59,22 +59,25 @@ const buySuccessReplyText = ({
   mainTokenSymbol = "APT",
   initial,
   worth,
+  boughtPrice = 0,
+  spentAmount = 0,
 }) => {
   return `<b>📌 Primary Trade</b>
 💳 Main
-🌎 $${symbol} 🚀 ${roundUpToSpecificDecimalPlaces(pl, 2)}% ⏱ what?
-💶 Initial: <b>${initial} ${mainTokenSymbol}</b>
+🌎 $${symbol} 🚀 ${roundUpToSpecificDecimalPlaces(pl, 2)}% 
+💶 Initial: <b>${roundUpToSpecificDecimalPlaces(initial, 5)} ${mainTokenSymbol}</b>
 💷 Worth: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>
+${spentAmount === 0 ? "" : "💵 Spent: <b>" + roundUpToSpecificDecimalPlaces(spentAmount, 4) + " APT</b>"}
 ⏳ Time elapsed: <b>${timeElapsed}</b>
-
+${boughtPrice === 0 ? "" : "\n💵 Bought Price: <b>" + roundUpToSpecificDecimalPlaces(boughtPrice, 8) + " APT</b>"}
 💵 Price: <b>$${price}</b>
-📉 CA Balance | 0% what?
-⚖ Taxes: 🅑 0% 🅢 0% what?
 
-📈 P/L: <b>${roundUpToSpecificDecimalPlaces(pl, 2)}</b>%
-💸 Price Impact: <b>${priceImpact}</b>%
-🤑 Expected Payout: <b>${roundUpToSpecificDecimalPlaces(initial - worth, 5)} ${mainTokenSymbol}</b>
+📈 P/L: <b>${pl}</b>%
+💸 Price Impact: <b>${/^\d/.test(priceImpact) ? priceImpact : priceImpact.slice(1)}</b>%
+🤑 Expected Payout: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>\n\n
 `;
+
+  //📉 CA Balance | 0% what? ⚖ Taxes: 🅑 0% 🅢 0% what? ⏱ what?
 };
 
 module.exports = { mainText, chainsText, autoSnipeConfigText, addSnipeText, generateWalletText, buySuccessReplyText };
