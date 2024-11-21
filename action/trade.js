@@ -19,8 +19,8 @@ const actionSellToken = async (ctx) => {
       const data = await swapTokens(
         fromToken,
         "0x1::aptos_coin::AptosCoin",
-        amount[index],
-        // 262268,
+        // amount[index],
+        17441,
         user.accounts[accountIndex]
       );
       if (data.error) {
@@ -41,9 +41,9 @@ const actionSellToken = async (ctx) => {
         } else {
           user.tokens.push({
             address: fromToken,
-            totalUsedAptosAmount: data.fromTokenAmount,
-            totalUsedAptosAmountUSD: data.fromTokenAmountUSD,
-            totalBoughtTokenAmount: data.toTokenAmount,
+            totalUsedAptosAmount: data.toTokenAmount,
+            totalUsedAptosAmountUSD: data.toTokenAmountUSD,
+            totalBoughtTokenAmount: data.fromTokenAmount,
             accountAddress: data.accountAddress,
             initialSellDate: Date.now(),
           });

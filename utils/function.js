@@ -96,16 +96,23 @@ function isInteger(value) {
 }
 
 /**
+ * Round up the number into the specific decimal position number.
  *
- * @param {Number} num
- * @param {Number} decimal
- * @returns
+ * @param {Number} num The number you want to round up.
+ * @param {Number} decimal The number of decimal position you want to round up
+ * @returns Return the number that rounded up into the specific decimal position.
  */
 function roundUpToSpecificDecimalPlaces(num, decimal = 0) {
   const decimals = 10 ** decimal;
   return Math.floor(num * decimals) / decimals;
 }
 
+/**
+ * Convert the miliseconds to this type string 'XXd XXh XXm XXs'
+ *
+ * @param {Number} ms The miliseconds that you want to convert
+ * @returns Return the string 'XXd XXh XXm XXs'
+ */
 function convertMilliseconds(ms) {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);

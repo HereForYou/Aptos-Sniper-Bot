@@ -35,22 +35,6 @@ const { actionConfig, actionAPTOS, actionReturn } = require("./action/other");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
 
-bot.use(session());
-bot.use((ctx, next) => {
-  try {
-    if (!ctx.session) {
-      ctx.session = {};
-      // ctx.session.toToken = "0x61ed8b048636516b4eaf4c74250fa4f9440d9c3e163d96aeb863fe658a4bdc67::CASH::CASH";
-      // ctx.session.buyAmount = 0.05;
-      // ctx.session.toTokenAmount = [1138.409];
-      // ctx.session.accountIndex = [2];
-    }
-    return next();
-  } catch (error) {
-    console.error(error);
-  }
-});
-
 //=====================================================================================================|
 //                                 The part to declare the commands                                    |
 //=====================================================================================================|
@@ -222,32 +206,32 @@ CA: <code>${data.toToken.address}</code>`,
 /**
  * Catch the action when the user clicks the '💰 Wallets' call_back button
  */
-bot.action("Wallets", actionWallets);
+bot.action("wallets", actionWallets);
 
 /**
  * Catch the action when the user clicks the '💰 Wallets -> Aptos -> ActivateWallet | DeactivateWallet' call_back button
  */
-bot.action(/(Activate|Deactivate)Wallet/, actionActivateOrDeactivate);
+bot.action(/(activate|deactivate)Wallet/, actionActivateOrDeactivate);
 
 /**
  * Catch the action when the user clicks the '💰 Wallets -> APTOS -> Export' call_back button
  */
-bot.action("Export", actionExportWallet);
+bot.action("export", actionExportWallet);
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe | 💰 Wallets -> APTOS -> Generate Wallet' call_back button
  */
-bot.action("GenerateWallet", premiumValidate, actionGenerateWallet);
+bot.action("generateWallet", premiumValidate, actionGenerateWallet);
 
 /**
  * Catch the action when the user click '💰 Wallets -> APTOS -> Connect Wallet' call_back button
  */
-bot.action("ConnectWallet", actionConnectWallet);
+bot.action("connectWallet", actionConnectWallet);
 
 /**
  * Catch the action when the user click '💰 Wallets -> APOTS -> Disconnect Wallet' call_back button
  */
-bot.action("DisconnectWallet", actionDisconnectWallet);
+bot.action("disconnectWallet", actionDisconnectWallet);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -257,13 +241,13 @@ bot.action("DisconnectWallet", actionDisconnectWallet);
 /**
  * Catch the action when the user clicks the '⚙️ Chains' call_back button
  */
-bot.action("Chains", actionChains);
+bot.action("chains", actionChains);
 
 /**
  * Catch the action when the user clicks the '⚙️ Chains -> Close' call_back button
  * Delete the current message
  */
-bot.action("Close", actionClose);
+bot.action("close", actionClose);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -273,7 +257,7 @@ bot.action("Close", actionClose);
 /**
  * Catch the action when the user clicks the '⚙️ Call Channels' call_back button
  */
-bot.action("Channel", actionChannel);
+bot.action("channel", actionChannel);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -283,7 +267,7 @@ bot.action("Channel", actionChannel);
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe' call_back button
  */
-bot.action("AutoSnipe", actionAutoSnipe);
+bot.action("autoSnipe", actionAutoSnipe);
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe -> Aptos -> Add Snipe' call_back button
@@ -292,27 +276,27 @@ bot.action("AutoSnipe", actionAutoSnipe);
  * If there is no wallet, it navigates to noWallet page
  * Otherwise it navigates to start and pause snipe page
  */
-bot.action("AddSnipe", actionAddSnipe);
+bot.action("addSnipe", actionAddSnipe);
 
 /**
  * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Add Token' call_back button
  */
-bot.action("AddToken", actionAddToken);
+bot.action("addToken", actionAddToken);
 
 /**
  * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Remove Token ' call_back button
  */
-bot.action("RemoveToken", actionRemoveToken);
+bot.action("removeToken", actionRemoveToken);
 
 /**
  * Catch the action when the user click '⚙️ Auto Snipe -> Aptos -> Add Snipe -> Start' call_back button
  */
-bot.action("Start", actionStart);
+bot.action("start", actionStart);
 
 /**
  * Catch the action when the user click '⚙️ Auto Snipe -> Aptos -> Add Snipe -> Pause' call_back button
  */
-bot.action("Pause", actionPause);
+bot.action("pause", actionPause);
 
 //=====================================================================================================|
 //                               The part to declare the actions                                       |
@@ -331,14 +315,14 @@ bot.action("APTOS", actionAPTOS);
  *
  * If there is no wallet, it returns this message '❌...'
  */
-bot.action("Config", actionConfig);
+bot.action("config", actionConfig);
 
 /**
  * Catch the action when the user click 'Return' call_back button
  * 
  * Edit the current message into start message (the response message when '/start' command)
  */
-bot.action("Return", actionReturn);
+bot.action("return", actionReturn);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -376,7 +360,7 @@ bot.action(/^Wallet (\d+$|All$)/, actionWallet);
 /**
  * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet * -> Refresh' call_back button
  */
-bot.action("Refresh", actionRefresh);
+bot.action("refresh", actionRefresh);
 
 /**
  * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet * -> 100%' call_back button
