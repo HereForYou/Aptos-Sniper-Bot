@@ -4,17 +4,22 @@
   "description": "This is sniper bot on Aptos Blockchain Network.",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "dev": "nodemon index.js",
     "test": "test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.31.0",
     "@martiandao/aptos-web3-bip44.js": "^2.0.2",
     "@martiandao/aptos-web3.js": "^3.0.7",
     "assert": "^2.1.0",
+    "axios": "^1.7.7",
     "cross-fetch": "^4.0.0",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
+    "mongoose": "^8.8.0",
+    "moralis": "^2.27.2",
     "nodemon": "^3.1.7",
     "telegraf": "^4.16.3"
   },
