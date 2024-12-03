@@ -9,7 +9,14 @@ const {
 const { mainText, autoSnipeConfigText } = require("../models/text.model");
 const { combineTextArray } = require("../utils/function");
 const { getAptosBalance } = require("../utils/aptos-web3");
+const { Context } = require("telegraf");
 
+/**
+ * When user clicks the 'Config' button on any page.
+ *
+ * @param {Context} ctx
+ * @returns
+ */
 const actionConfig = async (ctx) => {
   try {
     const chatId = ctx.chat.id;
@@ -33,6 +40,12 @@ const actionConfig = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'APTOS' callback button on any page.
+ *
+ * @param {Context} ctx
+ * @returns
+ */
 const actionAPTOS = async (ctx) => {
   try {
     const chatId = ctx.chat.id;
@@ -66,6 +79,14 @@ const actionAPTOS = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'Return' callback button on any page and the callback_data is "Return"
+ * e.g.
+ * [{ text: "Return", callback_data: "APTOS" }] No because callback_data is not APTOS
+ * [{ text: "Return", callback_data: "Return" }], Yes because callback button is 'Return' and callback_data is "Return"
+ *
+ * @param {Context} ctx
+ */
 const actionReturn = async (ctx) => {
   try {
     await ctx.editMessageText(mainText(), mainMarkUp);

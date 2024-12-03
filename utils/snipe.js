@@ -12,14 +12,14 @@ let time = {};
  * @param {object} account The address of getting toToken and consuming fromToken
  * @param {string} slippage Optional
  */
-const start = (ctx, fromToken, toToken, fromAmount, account, slippage = 0) => {
+const start = (ctx, fromToken, toToken, fromAmount, account, symbol, slippage = 0) => {
   console.log("running...");
   time[ctx.chat.id] = setInterval(async () => {
-    const data = await swapTokens(fromToken, toToken, fromAmount, account, slippage);
+    const data = await swapTokens(fromToken, toToken, fromAmount, account, symbol, slippage);
     if (data?.error) {
       // ctx.reply("Sorry, something went wrong while swapping tokens!");
-      let replyMessage = "Sorry, something went wrong!";
-      if (data?.error?.error_code === "account_not_found") {
+      let replyMessage = data.error;
+      if (data?.errorCode === "account_not_found") {
         replyMessage =
           "Sorry, to use newly generated wallet, you must top up that one to let network verify your account.";
         clearInterval(time);

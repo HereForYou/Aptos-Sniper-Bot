@@ -22,34 +22,21 @@ const UserSchema = new Schema({
   tokens: [
     {
       address: String,
-      // symbol: String,
+      symbol: String,
       totalUsedAptosAmount: Number,
+      totalUsedAptosWithFee: Number,
       totalUsedAptosAmountUSD: Number,
-      totalBoughtTokenAmount: Number,
+      totalBoughtTokenAmount: { type: Number, default: 0 },
+      totalSoldTokenAmount: { type: Number, default: 0 },
       totalBoughtTokenAmountUSD: Number,
       accountAddress: String,
-      // totalBuyedTokenPrice: Number,
-      initialBuyDate: {
-        type: Date,
-      },
-      latestBuyDate: {
-        type: Date,
-        default: () => Date.now(),
-      },
-      initialSellDate: {
-        type: Date,
-      },
-      latestSellDate: {
-        type: Date,
-        default: () => Date.now(),
-      },
+      averageBoughtPrice: Number,
+      initialBuyDate: { type: Date },
+      latestBuyDate: { type: Date, default: () => Date.now() },
     },
   ],
   snipes: [],
-  premium: {
-    type: Boolean,
-    default: false,
-  },
+  premium: { type: Boolean, default: false },
 });
 
 const User = model("User", UserSchema, "user");

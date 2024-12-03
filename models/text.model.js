@@ -56,28 +56,58 @@ const buySuccessReplyText = ({
   pl,
   timeElapsed,
   priceImpact,
-  mainTokenSymbol = "APT",
   initial,
   worth,
-  boughtPrice = 0,
+  totalBoughtTokenAmount = 0,
+  totalSoldTokenAmount = 0,
+  avgBoughtPrice = 0,
   spentAmount = 0,
+  isBuy = true,
+  remain = 0,
 }) => {
+  mainTokenSymbol = "APT";
+
   return `<b>📌 Primary Trade</b>
 💳 Main
-🌎 $${symbol} 🚀 ${roundUpToSpecificDecimalPlaces(pl, 2)}% 
-💶 Initial: <b>${roundUpToSpecificDecimalPlaces(initial, 5)} ${mainTokenSymbol}</b>
-💷 Worth: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>
-${spentAmount === 0 ? "" : "💵 Spent: <b>" + roundUpToSpecificDecimalPlaces(spentAmount, 4) + " APT</b>"}
-⏳ Time elapsed: <b>${timeElapsed}</b>
-${boughtPrice === 0 ? "" : "\n💵 Bought Price: <b>" + roundUpToSpecificDecimalPlaces(boughtPrice, 8) + " APT</b>"}
+🌎 $${symbol} 🚀 ${roundUpToSpecificDecimalPlaces(pl, 6)} APT${
+    isBuy ? "\n💵 Spent: <b>" + roundUpToSpecificDecimalPlaces(spentAmount, 5) + ` ${mainTokenSymbol}</b>` : ""
+  }${
+    totalBoughtTokenAmount === 0
+      ? ""
+      : `\n💵 Total Bought Token Amount: <b>${roundUpToSpecificDecimalPlaces(totalBoughtTokenAmount, 8)} ${
+          isBuy ? mainTokenSymbol : symbol
+        }</b>`
+  }${
+    totalSoldTokenAmount === 0
+      ? ""
+      : `\n💵 Total Sold Token Amount: <b>${roundUpToSpecificDecimalPlaces(totalSoldTokenAmount, 8)} ${
+          isBuy ? mainTokenSymbol : symbol
+        }</b>`
+  }${
+    remain === 0
+      ? ""
+      : `\n💵 Remain Token Amount: <b>${roundUpToSpecificDecimalPlaces(remain, 8)} ${
+          isBuy ? mainTokenSymbol : symbol
+        }</b>`
+  }
+⏳ Time elapsed: <b>${timeElapsed}</b>${
+    avgBoughtPrice === 0
+      ? ""
+      : `\n💵 Avg Bought Price: <b>${roundUpToSpecificDecimalPlaces(avgBoughtPrice, 8)} ${
+          isBuy ? mainTokenSymbol : symbol
+        }</b>`
+  }
 💵 Price: <b>$${price}</b>
 
-📈 P/L: <b>${pl}</b>%
-💸 Price Impact: <b>${/^\d/.test(priceImpact) ? priceImpact : priceImpact.slice(1)}</b>%
+📈 P/L: <b>${roundUpToSpecificDecimalPlaces(pl, 6)} APT</b>
+💸 Price Impact: <b>${/^(\d|-)/.test(priceImpact) ? priceImpact : priceImpact.slice(1)}</b>%
 🤑 Expected Payout: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>\n\n
 `;
 
   //📉 CA Balance | 0% what? ⚖ Taxes: 🅑 0% 🅢 0% what? ⏱ what?
+  //   💶 Initial: <b>${Math.abs(roundUpToSpecificDecimalPlaces(initial, 5))} ${mainTokenSymbol}</b>
+  // ${"💵 Spent: <b>" + roundUpToSpecificDecimalPlaces(spentAmount, 5) + ` ${mainTokenSymbol}</b>`}
+  // 💷 Worth: <b>${roundUpToSpecificDecimalPlaces(worth, 5)} ${mainTokenSymbol}</b>
 };
 
 module.exports = { mainText, chainsText, autoSnipeConfigText, addSnipeText, generateWalletText, buySuccessReplyText };

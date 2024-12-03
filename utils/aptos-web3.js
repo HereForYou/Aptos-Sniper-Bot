@@ -1,21 +1,39 @@
 // Create wallet using @aptos-labs/ts-sdk node module
 const { Aptos, AptosConfig, Network, Account, Ed25519PrivateKey } = require("@aptos-labs/ts-sdk");
 const axios = require("axios");
+const { decrypt } = require("./function");
 
 const config = new AptosConfig({ network: Network.MAINNET });
 const aptos = new Aptos(config);
 
 /**
+ * Get the token information using its address
  *
- * @param {Array} address
- * @returns
+ * @param {string} address The token address
+ * @returns Return the information about the token
+ */
+const getCoinInformation = async (address) => {
+  try {
+    const tokenAddress = address.split("::")[0];
+    const data = await aptos.getAccountResources({ accountAddress: tokenAddress });
+    const hairResource = data.find((resource) => resource.type.includes(address));
+    return hairResource;
+  } catch (error) {
+    console.error("Error while getting information: ", error);
+  }
+};
+
+/**
+ * Get balances of multi addresses
+ *
+ * @param {Array} addresses The addresses to get the balances
+ * @returns Return array of balances of addresses
  */
 const getAptosBalance = async (addresses) => {
   try {
     const coinsData = await Promise.all(
       addresses.map(async (address) => {
         const coinData = await aptos.getAccountCoinsData({ accountAddress: address });
-        console.log(coinData);
         const coins = [];
         const temp = { amount: 100000000 * 10 ** 8 };
         for (let i = 0; i < coinData.length; i++) {
@@ -44,6 +62,31 @@ const getAptosBalance = async (addresses) => {
 };
 
 /**
+ * Get the balance of wallet address by token symbol
+ *
+ * @param {string} address The wallet address you want to get balance
+ * @param {string} symbol Optional, The symbol you want to get balance
+ * @returns
+ */
+const getAccountBalanceByTokenSymbol = async (address, symbol = "APT") => {
+  const coinData = await aptos.getAccountCoinsData({ accountAddress: address });
+  const temp = { amount: 100000000 * 10 ** 8 };
+  if (symbol === "APT") {
+    const coin = coinData.find((coin) => coin.metadata.symbol === symbol && temp.amount > coin.amount);
+    if (coin) {
+      return coin.amount / 10 ** coin.metadata.decimals;
+    }
+    return 0;
+  } else {
+    const coin = coinData.find((coin) => coin.metadata.symbol === symbol);
+    if (coin) {
+      return coin.amount / 10 ** coin.metadata.decimals;
+    }
+    return 0;
+  }
+};
+
+/**
  * The function to create account
  * @returns The account Object with privateKey, publicKey, address if there is no error, otherwise error
  * */
@@ -64,7 +107,7 @@ const createAccount = async () => {
 /**
  * The function to derive account
  *
- * @param privateKeyString A private key used to create wallet
+ * @param {string} privateKeyString A private key used to create wallet
  * @returns The account Object with privateKey, publicKey, address if there is no error, otherwise error
  * */
 const deriveAccount = async (privateKeyString) => {
@@ -120,7 +163,7 @@ const getTokenList = async () => {
  * @param {number?} slippage
  * @returns If swapping is success, it returns the response otherwise error
  */
-async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10) {
+async function swapTokens(fromToken, toToken, fromAmount, account, symbol, slippage = 10) {
   const end_point = "https://api.panora.exchange/swap";
   const params = {
     chainId: 1,
@@ -134,7 +177,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
 
   const headers = {
     Accept: "application/json",
-    "x-api-key": "a4^KV_EaTf4MW#ZdvgGKX#HUD^3IFEAOV_kzpIE^3BQGA8pDnrkT7JcIy#HNlLGi",
+    "x-api-key": "wgYQs4!zl84qs@dKA_66irF@a!LvMr05AjgnxZs9hamPrvqre!.gfyZzkAT_+SKd",
   };
 
   try {
@@ -142,8 +185,11 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
     console.log("Response.data ==============", response.data);
 
     const txParams = response.data.quotes[0].txData;
-    console.log("=============== STEP 1 ===============");
-    derivedAccount = await deriveAccount(account.privateKey);
+    const derivedAccount = await deriveAccount(decrypt(account.privateKey.toString()));
+    console.log("=============== STEP 1 ===============", derivedAccount.accountAddress.toString());
+
+    const initialAptBalance = await getAccountBalanceByTokenSymbol(derivedAccount.accountAddress.toString());
+    const initialTokenBalance = await getAccountBalanceByTokenSymbol(derivedAccount.accountAddress.toString(), symbol);
 
     const expireTimestamp = Math.floor(Date.now() / 1000) + 30;
     const transaction = await aptos.transaction.build.simple({
@@ -153,7 +199,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
         functionArguments: txParams.arguments,
         typeArguments: txParams.type_arguments,
       },
-      options: { expireTimestamp: expireTimestamp * 1000, maxGasAmount: 1000 },
+      options: { expireTimestamp: expireTimestamp * 1000, maxGasAmount: 2000 },
     });
     console.log("=============== STEP 2 ===============", transaction);
 
@@ -161,7 +207,7 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
       signer: derivedAccount,
       transaction,
     });
-    console.log("=============== STEP 3 ===============");
+    console.log("=============== STEP 3 ===============", senderAuthenticator);
 
     const buyTx = await aptos.transaction.submit.simple({ transaction, senderAuthenticator });
     console.log("=============== STEP 4 ===============");
@@ -169,15 +215,28 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
     const result = await aptos.waitForTransaction({ transactionHash: buyTx.hash });
     console.log("=============== STEP 5 ===============");
 
+    const aptBalance = await getAccountBalanceByTokenSymbol(derivedAccount.accountAddress.toString());
+    const tokenBalance = await getAccountBalanceByTokenSymbol(derivedAccount.accountAddress.toString(), symbol);
+
+    let diffFromAmount, diffToAmount;
+
+    if (fromToken === "0x1::aptos_coin::AptosCoin") {
+      diffFromAmount = initialAptBalance - aptBalance;
+      diffToAmount = tokenBalance - initialTokenBalance;
+    } else {
+      diffFromAmount = initialTokenBalance - tokenBalance;
+      diffToAmount = aptBalance - initialAptBalance;
+    }
+
     if (result.vm_status == "Executed successfully") {
       console.log("=============== STEP 6 ===============");
       return {
         fromTokenPrice: response.data.fromToken.current_price,
-        fromTokenAmount: response.data.fromTokenAmount,
-        fromTokenAmountUSD: response.data.fromTokenAmountUSD,
+        fromTokenAmount: diffFromAmount,
+        fromTokenAmountUSD: diffFromAmount * response.data.fromToken.current_price,
         toTokenPrice: response.data.toToken.current_price,
-        toTokenAmount: response.data.quotes[0].toTokenAmount,
-        toTokenAmountUSD: response.data.quotes[0].toTokenAmountUSD,
+        toTokenAmount: diffToAmount,
+        toTokenAmountUSD: diffToAmount * response.data.toToken.current_price,
         slippagePercentage: response.data.quotes[0].slippagePercentage,
         priceImpact: response.data.quotes[0].priceImpact,
         accountAddress: account.accountAddress.toString(),
@@ -188,8 +247,22 @@ async function swapTokens(fromToken, toToken, fromAmount, account, slippage = 10
       return { error: `Buy transaction failed with status: ${result.vm_status}` };
     }
   } catch (error) {
-    console.error("Error while swapping.***********************", error);
-    return { error: error.data ?? "Sorry, something went wrong while swapping." };
+    console.error("Error while swapping.********", account.accountAddress, "========", error, ">>>>>>>>", error?.data);
+    let errorMessage = "";
+    let errorCode = "";
+    if (error?.data?.error_code === "account_not_found") {
+      errorMessage = "Sorry, to use the newly generated wallet, you must top up that one.";
+      errorCode = error?.data?.error_code;
+    }
+    // else if (error?.data?.error_code === "vm_error") {
+    //   errorMessage = "It seems like network is a bit busy. Please try again later.";
+    //   errorCode = error?.data?.error_code;
+    // }
+    else {
+      errorMessage = "Insufficient balance. Before using bot, please top up your wallet!";
+      errorCode = "insufficient_balance";
+    }
+    return { error: errorMessage, errorCode };
   }
 }
 
@@ -221,8 +294,8 @@ async function verifyToken(tokenAddress, account) {
     const response = await axios.post(end_point, "", { params, headers });
     return response.data;
   } catch (error) {
-    console.error("Error while swapping.***********************", error);
-    return { error: error.data };
+    console.error("Error while verifying the token.************", error.data ?? error.response.data ?? error);
+    return { error: error.data ?? error.response.data.message ?? "Something went wrong!" };
   }
 }
 
@@ -233,4 +306,6 @@ module.exports = {
   getTokenList,
   swapTokens,
   verifyToken,
+  getCoinInformation,
+  getAccountBalanceByTokenSymbol,
 };

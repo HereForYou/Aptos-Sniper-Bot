@@ -1,9 +1,10 @@
+const { Context } = require("telegraf");
 const User = require("../models/user.model");
 
 /**
  * Middleware function to validate premium user status and account limits
  *
- * @param {Telegraf<Context<Update>>} ctx 
+ * @param {Context} ctx Telegraf context
  * @param {() => Promise<void>} next
  * @returns
  */
@@ -29,4 +30,27 @@ const premiumValidate = async (ctx, next) => {
   }
 };
 
-module.exports = { premiumValidate };
+/**
+ * Middleware function to chect if the user is registered into database
+ *
+ * @param {Context} ctx Telegraf context
+ * @param {() => Promise<void>} next
+ */
+const userNotFound = async (ctx, next) => {
+  // Extract the chatId from context
+  const chatId = ctx.chat.id;
+
+  // Find user in database with chatId
+  const user = await User.findOne({ tgId: chatId });
+
+  // If user does not exist return the message
+  if (!user) {
+    ctx.reply("Before interactaction with bot, you need to sign in. Please input /start command!");
+    return;
+  }
+
+  // If user exists going on...
+  return next();
+};
+
+module.exports = { premiumValidate, userNotFound };

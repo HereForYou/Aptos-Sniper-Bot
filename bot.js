@@ -1,16 +1,12 @@
 const { Telegraf, session } = require("telegraf");
-const { isValidWallet, combineTextArray } = require("./utils/function");
+const { isValidWallet, combineTextArray, encrypt, decrypt } = require("./utils/function");
 const { deriveAccount, verifyToken } = require("./utils/aptos-web3");
-const { premiumValidate } = require("./utils/middleware");
+const { premiumValidate, userNotFound } = require("./utils/middleware");
 const User = require("./models/user.model");
 const { startCommand, helpCommand, activateCommand, invalidCommand, setCommands } = require("./command/command");
-const {
-  mainMarkUp,
-  addSnipeMarkUp,
-  buyTokenMarkUp,
-} = require("./models/markup.model");
+const { mainMarkUp, addSnipeMarkUp, buyTokenMarkUp, selectWalletForBuyMarkUp } = require("./models/markup.model");
 
-const { actionSellToken, actionBuy, actionWallet, actionRefresh } = require("./action/trade");
+const { actionBuy, actionWallet, actionRefresh, actionTurnToBuyOrSell, actionSell } = require("./action/trade");
 const {
   actionWallets,
   actionActivateOrDeactivate,
@@ -35,6 +31,18 @@ const { actionConfig, actionAPTOS, actionReturn } = require("./action/other");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
 
+bot.use(session());
+bot.use((ctx, next) => {
+  try {
+    if (!ctx.session) {
+      ctx.session = {};
+    }
+    return next();
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 //=====================================================================================================|
 //                                 The part to declare the commands                                    |
 //=====================================================================================================|
@@ -43,6 +51,12 @@ const bot = new Telegraf(BOT_TOKEN);
  * When the user inputs /start command in bot
  */
 bot.command("start", startCommand);
+// bot.command("start", async (ctx) => {
+//   console.log(
+//     "Aptos balance: ",
+//     await getAccountBalanceByTokenSymbol("0xc175d297b1743ff847e05609b7dac5ac72df8232fa5c4ea4cfc6877ab0de6fd7")
+//   );
+// });
 
 /**
  * When the user inputs /help command in bot
@@ -54,7 +68,7 @@ bot.command("help", helpCommand);
 /**
  * When the user inputs /activate command in bot
  */
-bot.command("activate", activateCommand);
+bot.command("activate", userNotFound, activateCommand);
 
 /**
  * When the user inputs unavailable commands in bot
@@ -70,7 +84,7 @@ bot.command(invalidCommand);
  *
  * Called when the user input some text in bot not commands
  */
-bot.on("text", async (ctx) => {
+bot.on("text", userNotFound, async (ctx) => {
   try {
     const text = ctx.message.text;
     const chatId = ctx.chat.id;
@@ -80,10 +94,12 @@ bot.on("text", async (ctx) => {
       ctx.reply("🚫 User not found!");
       return;
     }
+    ctx.deleteMessage();
     const addresses = user.accounts.map((account) => account.accountAddress);
+    const prevState = ctx.session.prevState;
 
     //========================================================= The part to handle wallet will be imported
-    if (ctx.session.prevState === "ConnectWallet") {
+    if (prevState === "ConnectWallet") {
       // If the wallet is invalid
       if (!isValidWallet(text)) {
         ctx.reply("⚠️ Invalid private key! Please input the valid private key.");
@@ -101,6 +117,7 @@ bot.on("text", async (ctx) => {
         ctx.reply("🚫 This wallet already exists.");
         return;
       }
+      account.privateKey = encrypt(account.privateKey.toString()).encryptedData;
 
       user.accounts.push({ ...account, active: user.accounts.length === 0 ? true : false });
       await user.save();
@@ -110,7 +127,7 @@ bot.on("text", async (ctx) => {
           "<b>address</b> : <code>" +
           account.accountAddress +
           "</code>\n<b>privateKey</b> : <code>" +
-          account.privateKey +
+          decrypt(account.privateKey) +
           "</code>\n<b>publicKey</b> : <code>" +
           account.publicKey +
           "</code>",
@@ -118,7 +135,7 @@ bot.on("text", async (ctx) => {
       );
       ctx.session.prevState = "ConnectWallet";
       //======================================================= The part to handle deleting wallet
-    } else if (ctx.session.prevState === "DisconnectWallet") {
+    } else if (prevState === "DisconnectWallet") {
       const index = addresses.indexOf(text);
       if (index === -1) {
         ctx.reply("⚠️ There is no such wallet.\nPlease check again the wallet is existed.");
@@ -129,7 +146,7 @@ bot.on("text", async (ctx) => {
       await ctx.reply("✅ Successfully deleted", mainMarkUp);
       ctx.session.prevState = "";
       //======================================================= The part to handle adding new token
-    } else if (ctx.session.prevState === "RemoveToken") {
+    } else if (prevState === "RemoveToken") {
       if (!user.tokens.includes(text)) {
         await ctx.reply("⚠️ That token does not exist. Please input token address existed in your token addresses.");
         return;
@@ -140,8 +157,7 @@ bot.on("text", async (ctx) => {
       const replyMessage = combineTextArray(user.tokens, "Token Address");
       await ctx.reply("✅ Successfully removed\n\n" + replyMessage, addSnipeMarkUp);
       ctx.session.prevState = "AutoSnipe";
-    } else if (ctx.session.prevState === "ActivateWallet" || ctx.session.prevState === "DeactivateWallet") {
-      const prevState = ctx.session.prevState;
+    } else if (prevState === "ActivateWallet" || prevState === "DeactivateWallet") {
       if (!isValidWallet(text)) {
         ctx.reply("Invalid Wallet address. Retry with valid wallet address.");
         return;
@@ -162,6 +178,17 @@ bot.on("text", async (ctx) => {
         mainMarkUp
       );
       ctx.session.prevState = "Wallets";
+    } else if (prevState === "InputBuyAmount") {
+      const accountAddresses = [];
+      const active = [];
+      user.accounts.map((acc, index) => {
+        acc.active && active.push(index);
+        accountAddresses.push(acc.accountAddress);
+      });
+      let replyMessage = combineTextArray(accountAddresses, "Wallet", active);
+      ctx.reply(replyMessage, selectWalletForBuyMarkUp(user.accounts));
+      ctx.session.prevState = "actionBuy";
+      ctx.session.buyAmount = text;
     } else {
       if (text.startsWith("/")) {
         ctx.reply("⚠️ I don't recognize that command.\nPlease use /help to see available commands.");
@@ -174,16 +201,22 @@ bot.on("text", async (ctx) => {
           ctx.reply("You have no activated account. Please activate at least one wallet!");
           return;
         }
+        if (text === "0x1::aptos_coin::AptosCoin") {
+          ctx.reply("Please enter the address different from APT.");
+          return;
+        }
         const data = await verifyToken(
           text,
           user.accounts.find((acc) => acc.active)
         );
+        if (data?.error) {
+          ctx.reply("❌ " + data?.error);
+          return;
+        }
         if (!data?.toToken) {
           ctx.reply("Invalid token address. Re-try with valid token address!");
           return;
         }
-        const coinAddress = data.toToken.address.split("::")[0];
-        // const coinSymbol = data.toToken.address.split("::")[1];
         const coinName = data.toToken.address.split("::")[2];
         await ctx.reply(
           `${coinName} 🔗 APT
@@ -191,6 +224,7 @@ CA: <code>${data.toToken.address}</code>`,
           buyTokenMarkUp
         );
         ctx.session.toToken = text;
+        ctx.session.isBuy = true;
       }
     }
   } catch (error) {
@@ -206,32 +240,32 @@ CA: <code>${data.toToken.address}</code>`,
 /**
  * Catch the action when the user clicks the '💰 Wallets' call_back button
  */
-bot.action("wallets", actionWallets);
+bot.action("Wallets", userNotFound, actionWallets);
 
 /**
  * Catch the action when the user clicks the '💰 Wallets -> Aptos -> ActivateWallet | DeactivateWallet' call_back button
  */
-bot.action(/(activate|deactivate)Wallet/, actionActivateOrDeactivate);
+bot.action(/(Activate|Deactivate)Wallet/, userNotFound, actionActivateOrDeactivate);
 
 /**
  * Catch the action when the user clicks the '💰 Wallets -> APTOS -> Export' call_back button
  */
-bot.action("export", actionExportWallet);
+bot.action("Export", userNotFound, actionExportWallet);
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe | 💰 Wallets -> APTOS -> Generate Wallet' call_back button
  */
-bot.action("generateWallet", premiumValidate, actionGenerateWallet);
+bot.action("GenerateWallet", userNotFound, premiumValidate, actionGenerateWallet);
 
 /**
  * Catch the action when the user click '💰 Wallets -> APTOS -> Connect Wallet' call_back button
  */
-bot.action("connectWallet", actionConnectWallet);
+bot.action("ConnectWallet", userNotFound, actionConnectWallet);
 
 /**
  * Catch the action when the user click '💰 Wallets -> APOTS -> Disconnect Wallet' call_back button
  */
-bot.action("disconnectWallet", actionDisconnectWallet);
+bot.action("DisconnectWallet", userNotFound, actionDisconnectWallet);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -241,13 +275,13 @@ bot.action("disconnectWallet", actionDisconnectWallet);
 /**
  * Catch the action when the user clicks the '⚙️ Chains' call_back button
  */
-bot.action("chains", actionChains);
+bot.action("Chains", userNotFound, actionChains);
 
 /**
  * Catch the action when the user clicks the '⚙️ Chains -> Close' call_back button
  * Delete the current message
  */
-bot.action("close", actionClose);
+bot.action("Close", userNotFound, actionClose);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -257,7 +291,7 @@ bot.action("close", actionClose);
 /**
  * Catch the action when the user clicks the '⚙️ Call Channels' call_back button
  */
-bot.action("channel", actionChannel);
+bot.action("Channel", userNotFound, actionChannel);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -267,7 +301,7 @@ bot.action("channel", actionChannel);
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe' call_back button
  */
-bot.action("autoSnipe", actionAutoSnipe);
+bot.action("AutoSnipe", userNotFound, actionAutoSnipe);
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe -> Aptos -> Add Snipe' call_back button
@@ -276,27 +310,27 @@ bot.action("autoSnipe", actionAutoSnipe);
  * If there is no wallet, it navigates to noWallet page
  * Otherwise it navigates to start and pause snipe page
  */
-bot.action("addSnipe", actionAddSnipe);
+bot.action("AddSnipe", userNotFound, actionAddSnipe);
 
 /**
  * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Add Token' call_back button
  */
-bot.action("addToken", actionAddToken);
+bot.action("AddToken", userNotFound, actionAddToken);
 
 /**
  * Catch the action when the user click '🎯 Auto Snipe -> APTOS -> ⚙️ Config -> ⚙️ Remove Token ' call_back button
  */
-bot.action("removeToken", actionRemoveToken);
+bot.action("RemoveToken", userNotFound, actionRemoveToken);
 
 /**
  * Catch the action when the user click '⚙️ Auto Snipe -> Aptos -> Add Snipe -> Start' call_back button
  */
-bot.action("start", actionStart);
+bot.action("Start", userNotFound, actionStart);
 
 /**
  * Catch the action when the user click '⚙️ Auto Snipe -> Aptos -> Add Snipe -> Pause' call_back button
  */
-bot.action("pause", actionPause);
+bot.action("Pause", userNotFound, actionPause);
 
 //=====================================================================================================|
 //                               The part to declare the actions                                       |
@@ -308,21 +342,21 @@ bot.action("pause", actionPause);
  *
  * Navigate to other page according to the value of ctx.session.prevState
  */
-bot.action("APTOS", actionAPTOS);
+bot.action("APTOS", userNotFound, actionAPTOS);
 
 /**
  * Catch the action when the user clicks the '⚙️ Auto Snipe -> APOTS -> ⚙️ Config' call_back button
  *
  * If there is no wallet, it returns this message '❌...'
  */
-bot.action("config", actionConfig);
+bot.action("Config", userNotFound, actionConfig);
 
 /**
  * Catch the action when the user click 'Return' call_back button
- * 
+ *
  * Edit the current message into start message (the response message when '/start' command)
  */
-bot.action("return", actionReturn);
+bot.action("Return", userNotFound, actionReturn);
 
 //=====================================================================================================|
 //                             The part to declare the actions                                         |
@@ -331,7 +365,7 @@ bot.action("return", actionReturn);
 
 /**
  * Catch the action when the user clicks the 'After input token address -> Buy*APT' call_back button
- * 
+ *
  * /^Buy(0\.[1-9]|[1-10]|X)APT$/ Regular expression
  * "Buy0.1APT",
  * "Buy0.2APT",
@@ -342,11 +376,21 @@ bot.action("return", actionReturn);
  * "buy0.1APT", // Should not match (case-sensitive)
  * "Buy0.10APT" // Should not match
  */
-bot.action(/^Buy(0\.[1-9]|[1-10]|X)APT$/, actionBuy);
+bot.action(/^Buy(0\.[1-9]|[1-10]|X)APT$/, userNotFound, actionBuy);
+
+/**
+ * Catch the action when user clicks the 'After enter token addresss -> Buy ↔️ Sell'
+ */
+bot.action("BuySell", userNotFound, actionTurnToBuyOrSell);
+
+/**
+ * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet * -> 100%' call_back button
+ */
+bot.action(/^Sell\s+(\d{1,3}%|X\s+(APT|Tokens|%)|Max Tx)$/i, userNotFound, actionSell);
 
 /**
  * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet *' call_back button
- * 
+ *
  * /^Wallet (\d+$|All$)/ Regular expression
  * "Wallet 1",
  * "Wallet 2",
@@ -355,17 +399,12 @@ bot.action(/^Buy(0\.[1-9]|[1-10]|X)APT$/, actionBuy);
  * "Wallet 1All", Should not match (just All after Wallet)
  * "Wallet 1s", Should not match (must end with number or All)
  */
-bot.action(/^Wallet (\d+$|All$)/, actionWallet);
+bot.action(/^Wallet (\d+$|All$)/, userNotFound, actionWallet);
 
 /**
  * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet * -> Refresh' call_back button
  */
-bot.action("refresh", actionRefresh);
-
-/**
- * Catch the action when the user clicks the 'After input token address -> Buy*APT -> Wallet * -> 100%' call_back button
- */
-bot.action("100%", actionSellToken);
+bot.action("Refresh", userNotFound, actionRefresh);
 
 //=====================================================================================================|
 //                             The part to show all commands used in bot                               |

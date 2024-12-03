@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 /**
  * Returns a Boolean that indicates whether or not the wallet address is a stirng of 64 hex characters
  *
@@ -64,7 +66,7 @@ function combineTextArray(array, type, active = [], coins = null, account = fals
         // array[i].accountAddress +
         // "</code>\n" +
         "\n<b>Private Key</b>: <code>" +
-        array[i].privateKey +
+        decrypt(array[i].privateKey) +
         "</code>\n" +
         "<b>Public Key</b>: <code>" +
         array[i].accountAddress +
@@ -81,7 +83,7 @@ function combineTextArray(array, type, active = [], coins = null, account = fals
  * @returns Returns true if value is string converted to number, otherwise false
  */
 function isNumber(value) {
-  return !isNaN(Number(value)) && value.trim() !== "";
+  return !isNaN(Number(value)) && value != "Infinity" && value.toString().trim() !== "";
 }
 
 /**
@@ -92,7 +94,7 @@ function isNumber(value) {
  */
 function isInteger(value) {
   const num = Number(value);
-  return Number.isInteger(num) && value.trim() !== "";
+  return Number.isInteger(num) && value?.trim() !== "";
 }
 
 /**
@@ -130,7 +132,53 @@ function convertMilliseconds(ms) {
   }${remainingSeconds}s`;
 }
 
+/**
+ * The function to delay during ms miliseconds
+ *
+ * @param {number} ms Specify how long does it want to delay in miliseconds
+ * @returns Return promise
+ */
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// The key to use to encrypt data.
+const key = process.env.PRIVATE_KEY;
+const iv = process.env.IV;
+
+/**
+ * Function to encrypt the data with aes-256-cbc algorithm
+ *
+ * @param {string} text string data you want to encrypt (e.g. private key, password ...)
+ * @returns Return encrypted data
+ */
+function encrypt(text) {
+  const algorithm = "aes-256-cbc";
+
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+  let encrypted = cipher.update(text, "utf8", "hex");
+  encrypted += cipher.final("hex");
+
+  // Return the encrypted text along with the IV and key
+  return { encryptedData: encrypted };
+}
+
+/**
+ * Function to decrypt the encrypted data
+ *
+ * @param {string} encryptedData Encrypted data you want to decrypt
+ * @returns Return the decrypted data
+ */
+function decrypt(encryptedData) {
+  const algorithm = "aes-256-cbc";
+  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+  let decrypted = decipher.update(encryptedData, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
+}
+
 module.exports = {
+  delay,
   isValidWallet,
   removeTags,
   combineTextArray,
@@ -138,4 +186,6 @@ module.exports = {
   isInteger,
   roundUpToSpecificDecimalPlaces,
   convertMilliseconds,
+  encrypt,
+  decrypt,
 };

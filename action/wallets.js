@@ -1,10 +1,15 @@
 const User = require("../models/user.model");
 const { walletsMarkUp } = require("../models/markup.model");
 const { getAptosBalance, createAccount } = require("../utils/aptos-web3");
-const { combineTextArray } = require("../utils/function");
+const { combineTextArray, encrypt } = require("../utils/function");
 const { manageWalletMarkUp } = require("../models/markup.model");
 const { generateWalletText } = require("../models/text.model");
 
+/**
+ * When user clicks 'Wallets' callback button on first page
+ *
+ * @param {Context} ctx
+ */
 const actionWallets = async (ctx) => {
   try {
     await ctx.editMessageText("Select target chain:", walletsMarkUp);
@@ -14,6 +19,11 @@ const actionWallets = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks 'Activate | Deactivate' callback button on Wallets management page.
+ *
+ * @param {Context} ctx
+ */
 const actionActivateOrDeactivate = async (ctx) => {
   try {
     const action = ctx.callbackQuery.data;
@@ -24,6 +34,11 @@ const actionActivateOrDeactivate = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'Export | Hide' callback button on Wallets management page.
+ *
+ * @param {Context} ctx
+ */
 const actionExportWallet = async (ctx) => {
   try {
     const chatId = ctx.chat.id;
@@ -49,6 +64,12 @@ const actionExportWallet = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'Generage' callback button on Wallets management page.
+ *
+ * @param {Context} ctx
+ * @returns
+ */
 const actionGenerateWallet = async (ctx) => {
   try {
     let replyMessage = "";
@@ -65,7 +86,7 @@ const actionGenerateWallet = async (ctx) => {
       }
       user.accounts.push({
         accountAddress: account.accountAddress.toString(),
-        privateKey: account.privateKey.toString(),
+        privateKey: encrypt(account.privateKey.toString()).encryptedData,
         publicKey: account.publicKey.toString(),
         active: user.accounts.length === 0 ? true : false,
       });
@@ -84,6 +105,12 @@ const actionGenerateWallet = async (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'Import' callback button on Wallets management page.
+ *
+ * @param {Context} ctx
+ * @returns
+ */
 const actionConnectWallet = (ctx) => {
   try {
     ctx.reply("Okay. Please input the private key of your wallet you want to connect.");
@@ -93,6 +120,12 @@ const actionConnectWallet = (ctx) => {
   }
 };
 
+/**
+ * When user clicks the 'Disconnect' callback button on Wallets management page.
+ *
+ * @param {Context} ctx
+ * @returns
+ */
 const actionDisconnectWallet = async (ctx) => {
   try {
     const chatId = ctx.chat.id;

@@ -134,7 +134,6 @@ const selectWalletForBuyMarkUp = (accounts) => {
   for (let i = 0; i < Math.ceil(accounts.length / 3); i++) {
     markUps.push([]);
   }
-  console.log(markUps);
   return {
     parse_mode: "HTML",
     reply_markup: {
@@ -214,10 +213,10 @@ const buySuccessReplyMarkUp = {
         { text: "Sniper Bot", callback_data: "Ziptos" },
       ],
       [
-        { text: "25%", callback_data: "25%" },
-        { text: "50%", callback_data: "50%" },
-        { text: "75%", callback_data: "75%" },
-        { text: "100%", callback_data: "100%" },
+        { text: "25%", callback_data: "Sell 25%" },
+        { text: "50%", callback_data: "Sell 50%" },
+        { text: "75%", callback_data: "Sell 75%" },
+        { text: "100%", callback_data: "Sell 100%" },
       ],
       [
         { text: "Sell Initials", callback_data: "Sell Initials" },
@@ -233,7 +232,7 @@ const buySuccessReplyMarkUp = {
         { text: "🔄 Reset", callback_data: "Reset" },
         { text: "🟢 Refresh", callback_data: "Refresh" },
         { text: "🔴 Stop", callback_data: "Stop" },
-        { text: "❌ Delete", callback_data: "Delete" },
+        { text: "❌ Delete", callback_data: "Close" },
       ],
     ],
   },
@@ -247,6 +246,7 @@ const buyTokenMarkUp = {
         { text: "Ziptos", callback_data: "Ziptos" },
         { text: "Sniper Bot", callback_data: "Ziptos" },
       ],
+      [{ text: "Buy ↔️ Sell", callback_data: "BuySell" }],
       [
         { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
         { text: "Buy 0.2 APT", callback_data: "Buy0.2APT" },
@@ -259,10 +259,37 @@ const buyTokenMarkUp = {
         { text: "Buy 2 APT", callback_data: "Buy2APT" },
         { text: "Buy 5 APT", callback_data: "Buy5APT" },
       ],
-      // [
-      //   { text: "Buy X APT", callback_data: "BuyXAPT" },
-      //   { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
-      // ],
+      [
+        { text: "Buy X APT", callback_data: "BuyXAPT" },
+        // { text: "Buy 0.1 APT", callback_data: "Buy0.1APT" },
+      ],
+    ],
+  },
+};
+
+const sellTokenMarkUp = {
+  parse_mode: "HTML",
+  reply_markup: {
+    inline_keyboard: [
+      [
+        { text: "Ziptos", callback_data: "Ziptos" },
+        { text: "Sniper Bot", callback_data: "Ziptos" },
+      ],
+      [{ text: "Buy ↔️ Sell", callback_data: "BuySell" }],
+      [
+        { text: "25%", callback_data: "Sell 25%" },
+        { text: "50%", callback_data: "Sell 50%" },
+        { text: "75%", callback_data: "Sell 75%" },
+        { text: "100%", callback_data: "Sell 100%" },
+      ],
+      [
+        { text: "Sell X %", callback_data: "Sell X %" },
+      ],
+      [
+        { text: "Sell X APT", callback_data: "Sell X APT" },
+        { text: "Sell Max TX", callback_data: "Sell Max Tx" },
+        { text: "Sell X Tokens", callback_data: "Sell X Tokens" },
+      ],
     ],
   },
 };
@@ -281,4 +308,5 @@ module.exports = {
   autoSnipeConfMarkUp,
   buySuccessReplyMarkUp,
   buyTokenMarkUp,
+  sellTokenMarkUp,
 };

@@ -7,12 +7,17 @@ const { combineTextArray } = require("../utils/function");
 const startCommand = async (ctx) => {
   try {
     const chatId = ctx.chat.id;
+
+    // if (chatId === 6155262701 || chatId === 1873690277) {
+    //   ctx.reply("It's very streesful to work with you. Disaster!!!");
+    //   return;
+    // }
     console.log(chatId);
     const user = await User.findOne({ tgId: chatId });
     if (!user) {
       const newUser = new User({
         tgId: chatId,
-        userName: ctx.chat.username,
+        userName: ctx.chat.username | "default",
       });
       await newUser.save();
     }
@@ -44,7 +49,7 @@ const activateCommand = async (ctx) => {
       return;
     }
     if (user.accounts.length === 0) {
-      await ctx.editMessageText("ℹ️ Connect a wallet to show settings.", genConWalletMarkUp("Wallets"));
+      await ctx.reply("ℹ️ Connect a wallet to show settings.", genConWalletMarkUp("Wallets"));
       return;
     }
 
