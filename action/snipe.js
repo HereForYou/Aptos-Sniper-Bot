@@ -56,20 +56,32 @@ const actionStart = async (ctx) => {
       return;
     }
 
+    const snipeToken = ctx.session.toToken;
+    const snipeAddress = ctx.session.snipeAccountAddress;
+
+    console.log(ctx.session.toToken, ctx.session.snipeAccountAddress);
+
     const chatId = ctx.chat.id;
     const user = await User.findOne({ tgId: chatId });
 
-    if (user.tokens.length === 0 || user.accounts.length === 0) {
-      ctx.reply("🚫 Sorry, there is no token or wallet for swapping.");
-      return;
-    }
-    const activeAccs = user.accounts.filter((account) => account.active === true);
-    if (activeAccs.length === 0) {
-      ctx.reply("🚫 Sorry, you have no active account. Activate at least one account.");
-      return;
+    const account = user.accounts.find((account) => account.accountAddress === snipeAddress);
+    console.log("Address accout : ", account);
+
+    if (!account) {
+      ctx.reply("That address does not exist");
     }
 
-    start(ctx, "0x1::aptos_coin::AptosCoin", user.tokens[0], 0.1, activeAccs[0]);
+    // if (user.tokens.length === 0 || user.accounts.length === 0) {
+    //   ctx.reply("🚫 Sorry, there is no token or wallet for snipe.");
+    //   return;
+    // }
+    // const activeAccs = user.accounts.filter((account) => account.active === true);
+    // if (activeAccs.length === 0) {
+    //   ctx.reply("🚫 Sorry, you have no active account. Activate at least one account.");
+    //   return;
+    // }
+
+    start(ctx, "0x1::aptos_coin::AptosCoin", snipeToken, 0.1, account);
     ctx.session.isSnipeRunning = true;
     ctx.reply("Snipe is running...");
   } catch (error) {

@@ -18,7 +18,7 @@ const addSnipeText = (text) => {
   return `
 👍 Great! Ready to start snipe.
 
-${text}
+<code>${text}</code>
 👉 Click start`;
 };
 

@@ -26,6 +26,7 @@ const {
 const { actionChains, actionClose } = require("./action/chain");
 const { actionChannel } = require("./action/channel");
 const { actionConfig, actionAPTOS, actionReturn } = require("./action/other");
+const { addSnipeText } = require("./models/text.model");
 
 //========================================================= Create new bot -> username: @aptos_snipe_bot
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -189,6 +190,45 @@ bot.on("text", userNotFound, async (ctx) => {
       ctx.reply(replyMessage, selectWalletForBuyMarkUp(user.accounts));
       ctx.session.prevState = "actionBuy";
       ctx.session.buyAmount = text;
+    } else if (prevState === "AddToken") {
+      if (user.accounts.length === 0) {
+        ctx.reply("You have no account. Please import or generate wallet!");
+        return;
+      }
+      if (user.accounts.filter((acc) => acc.active).length === 0) {
+        ctx.reply("You have no activated account. Please activate at least one wallet!");
+        return;
+      }
+      if (text === "0x1::aptos_coin::AptosCoin") {
+        ctx.reply("Please enter the address different from APT.");
+        return;
+      }
+      ctx.session.toToken = text;
+      ctx.session.prevState = "AddAddressForSnipe";
+      ctx.reply("Add wallet address you wanna use for snipe.");
+    } else if (prevState === "AddAddressForSnipe") {
+      ctx.session.snipeAccountAddress = text;
+      if (user.accounts.filter((account) => account.accountAddress === text).length === 0) {
+        ctx.reply("That wallet does not exist.");
+        return;
+      }
+      if (!user.accounts.find((account) => account.accountAddress === text).active) {
+        ctx.reply("Choose the active wallet.");
+        return;
+      }
+      if (
+        user.snipes.filter((snipe) => snipe.address === ctx.session.toToken && snipe.accountAddress === text).length > 0
+      ) {
+        ctx.reply(addSnipeText(text), addSnipeMarkUp);
+        return;
+      }
+      const newSnipe = {
+        address: ctx.session.toToken,
+        accountAddress: text,
+      };
+      user.snipes.push(newSnipe);
+      await user.save();
+      ctx.reply(addSnipeText(text), addSnipeMarkUp);
     } else {
       if (text.startsWith("/")) {
         ctx.reply("⚠️ I don't recognize that command.\nPlease use /help to see available commands.");

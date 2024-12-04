@@ -35,7 +35,13 @@ const UserSchema = new Schema({
       latestBuyDate: { type: Date, default: () => Date.now() },
     },
   ],
-  snipes: [],
+  snipes: [
+    {
+      address: String,
+      accountAddress: String,
+      startDate: { type: Date, default: () => Date.now() },
+    },
+  ],
   premium: { type: Boolean, default: false },
 });
 

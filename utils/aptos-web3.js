@@ -287,14 +287,15 @@ async function verifyToken(tokenAddress, account) {
 
   const headers = {
     Accept: "application/json",
-    "x-api-key": "a4^KV_EaTf4MW#ZdvgGKX#HUD^3IFEAOV_kzpIE^3BQGA8pDnrkT7JcIy#HNlLGi",
+    "x-api-key": "wgYQs4!zl84qs@dKA_66irF@a!LvMr05AjgnxZs9hamPrvqre!.gfyZzkAT_+SKd",
   };
 
   try {
     const response = await axios.post(end_point, "", { params, headers });
     return response.data;
   } catch (error) {
-    console.error("Error while verifying the token.************", error.data ?? error.response.data ?? error);
+    // console.error("Error while verifying the token.************", error.data ?? error.response.data ?? error);
+    console.error("Error while verifying the token.************", error);
     return { error: error.data ?? error.response.data.message ?? "Something went wrong!" };
   }
 }
